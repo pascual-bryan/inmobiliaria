@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FITGYM | Tecnología para tu progreso</title>
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f7f9fb;
+            color: #1d2939;
+        }
+
+        /* NAVBAR */
+
+        .navbar {
+            padding: 18px 0;
+            background: #101820;
+        }
+
+        .navbar-brand {
+            font-size: 25px;
+            font-weight: 800;
+            color: #35d07f !important;
+        }
+
+        .nav-link {
+            color: white !important;
+            margin-left: 20px;
+        }
+
+        .btn-gym {
+            background: #35d07f;
+            color: #101820;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .btn-gym:hover {
+            background: #28b96c;
+        }
+
+
+        /* HERO */
+
+        .hero {
+            min-height: 650px;
+            display: flex;
+            align-items: center;
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(16,24,32,.98) 0%,
+                    rgba(16,24,32,.88) 45%,
+                    rgba(16,24,32,.35) 100%
+                ),
+                url("img/gym.jpg");
+
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 58px;
+            font-weight: 800;
+            line-height: 1.05;
+        }
+
+        .hero h1 span {
+            color: #35d07f;
+        }
+
+        .hero p {
+            font-size: 19px;
+            color: #d5dbe0;
+            max-width: 580px;
+            margin: 25px 0;
+            line-height: 1.7;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background: rgba(53,208,127,.15);
+            color: #35d07f;
+            padding: 8px 15px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+
+        /* TITULOS */
+
+        .section {
+            padding: 90px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 55px;
+        }
+
+        .section-title h2 {
+            font-size: 38px;
+            font-weight: 800;
+            color: #101820;
+        }
+
+        .section-title p {
+            color: #6b7280;
+            max-width: 650px;
+            margin: auto;
+        }
+
+
+        /* OBJETIVOS */
+
+        .objective-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 18px;
+            height: 100%;
+            border: 1px solid #e7ebef;
+            transition: .3s;
+        }
+
+        .objective-card:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 15px 35px rgba(0,0,0,.08);
+        }
+
+        .objective-icon {
+            width: 65px;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            background: #eafaf1;
+            color: #25ad67;
+            font-size: 28px;
+            margin-bottom: 25px;
+        }
+
+        .objective-card h3 {
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .objective-card p {
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+
+        /* SISTEMA */
+
+        .system-section {
+            background: #101820;
+            color: white;
+        }
+
+        .system-section h2 {
+            color: white;
+        }
+
+        .system-section .section-title p {
+            color: #b9c2ca;
+        }
+
+        .system-card {
+            background: #18232d;
+            padding: 30px;
+            border-radius: 15px;
+            height: 100%;
+            border: 1px solid #293641;
+        }
+
+        .system-card i {
+            font-size: 30px;
+            color: #35d07f;
+            margin-bottom: 20px;
+        }
+
+        .system-card h4 {
+            font-weight: 700;
+        }
+
+        .system-card p {
+            color: #aeb8c0;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+
+        /* DASHBOARD */
+
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 45px rgba(0,0,0,.08);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .dashboard-header h3 {
+            font-weight: 800;
+        }
+
+        .dashboard-user {
+            background: #eafaf1;
+            padding: 8px 15px;
+            border-radius: 30px;
+            color: #25ad67;
+            font-weight: bold;
+        }
+
+        .stat {
+            padding: 20px;
+            border-radius: 12px;
+            background: #f7f9fb;
+        }
+
+        .stat span {
+            color: #7a8490;
+            font-size: 14px;
+        }
+
+        .stat h3 {
+            margin: 5px 0 0;
+            font-weight: 800;
+            color: #101820;
+        }
+
+        .progress-custom {
+            height: 10px;
+            background: #e6eaed;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-custom div {
+            height: 100%;
+            width: 75%;
+            background: #35d07f;
+        }
+
+
+        /* IMPACTO */
+
+        .impact-card {
+            padding: 35px;
+            background: white;
+            border-radius: 18px;
+            border: 1px solid #e7ebef;
+            height: 100%;
+        }
+
+        .impact-card h4 {
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .impact-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .impact-list li {
+            margin-bottom: 15px;
+            color: #66717c;
+        }
+
+        .impact-list i {
+            color: #35b875;
+            margin-right: 10px;
+        }
+
+
+        /* CTA */
+
+        .cta {
+            padding: 80px 0;
+            background: #35d07f;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 40px;
+            font-weight: 800;
+            color: #101820;
+        }
+
+        .cta p {
+            color: #183025;
+            font-size: 18px;
+            max-width: 650px;
+            margin: 15px auto 30px;
+        }
+
+        .btn-dark-custom {
+            display: inline-block;
+            padding: 13px 28px;
+            background: #101820;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+
+        /* FOOTER */
+
+        footer {
+            background: #101820;
+            color: #9ba7b1;
+            padding: 30px 0;
+            text-align: center;
+        }
+
+        footer strong {
+            color: #35d07f;
+        }
+
+
+        /* RESPONSIVE */
+
+        @media(max-width: 768px) {
+
+            .hero {
+                min-height: 580px;
+            }
+
+            .hero h1 {
+                font-size: 42px;
+            }
+
+            .section {
+                padding: 60px 0;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav class="navbar navbar-expand-lg">
+
+    <div class="container">
+
+        <a class="navbar-brand" href="#">
+            FITGYM
+        </a>
+
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#menu"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="menu">
+
+            <ul class="navbar-nav ms-auto align-items-center">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#objetivos">
+                        Objetivos
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#sistema">
+                        Sistema
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#progreso">
+                        Progreso
+                    </a>
+                </li>
+
+                <li class="nav-item ms-3">
+
+                    <a href="#contacto" class="btn btn-gym">
+                        Conocer proyecto
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================
+     HERO
+========================= -->
+
+<section class="hero">
+
+    <div class="container">
+
+        <div class="row">
+
+            <div class="col-lg-7">
+
+                <span class="hero-tag">
+                    TECNOLOGÍA + FITNESS
+                </span>
+
+                <h1>
+                    Tu entrenamiento.
+                    <br>
+                    <span>Tu progreso.</span>
+                    <br>
+                    Una sola plataforma.
+                </h1>
+
+                <p>
+                    FITGYM es una propuesta de software diseñada
+                    para ayudar a los gimnasios a administrar su
+                    operación y ofrecer un mejor seguimiento a sus clientes.
+                </p>
+
+                <a href="#objetivos" class="btn btn-gym">
+                    Explorar proyecto
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     OBJETIVOS
+========================= -->
+
+<section class="section" id="objetivos">
+
+    <div class="container">
+
+        <div class="section-title">
+
+            <h2>
+                Cada persona tiene un objetivo diferente
+            </h2>
+
+            <p>
+                FITGYM puede adaptarse a las necesidades
+                de cada usuario.
+            </p>
+
+        </div>
+
+
+        <div class="row g-4">
+
+
+            <div class="col-md-6">
+
+                <div class="objective-card">
+
+                    <div class="objective-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+
+                    <h3>
+                        Mejorar el físico
+                    </h3>
+
+                    <p>
+                        Personas que buscan ganar masa muscular,
+                        perder grasa, aumentar fuerza o mejorar
+                        su rendimiento físico.
+                    </p>
+
+                    <ul>
+
+                        <li>
+                            Objetivos personales
+                        </li>
+
+                        <li>
+                            Rutinas personalizadas
+                        </li>
+
+                        <li>
+                            Registro de progreso
+                        </li>
+
+                        <li>
+                            Medidas y evolución
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-6">
+
+                <div class="objective-card">
+
+                    <div class="objective-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+
+                    <h3>
+                        Salud y bienestar
+                    </h3>
+
+                    <p>
+                        Personas que buscan mantenerse activas,
+                        mejorar su condición física y crear hábitos
+                        de actividad constante.
+                    </p>
+
+                    <ul>
+
+                        <li>
+                            Seguimiento de actividad
+                        </li>
+
+                        <li>
+                            Constancia
+                        </li>
+
+                        <li>
+                            Historial de entrenamientos
+                        </li>
+
+                        <li>
+                            Progreso personal
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     SISTEMA
+========================= -->
+
+<section class="section system-section" id="sistema">
+
+    <div class="container">
+
+        <div class="section-title">
+
+            <h2>
+                ¿Qué puede hacer el software?
+            </h2>
+
+            <p>
+                Una plataforma que conecta las principales
+                áreas del gimnasio.
+            </p>
+
+        </div>
+
+
+        <div class="row g-4">
+
+
+            <div class="col-md-3">
+
+                <div class="system-card">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <h4>
+                        Clientes
+                    </h4>
+
+                    <p>
+                        Perfiles, objetivos,
+                        historial y progreso.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <div class="system-card">
+
+                    <i class="bi bi-credit-card-fill"></i>
+
+                    <h4>
+                        Membresías
+                    </h4>
+
+                    <p>
+                        Pagos, vencimientos
+                        y renovaciones.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <div class="system-card">
+
+                    <i class="bi bi-bar-chart-fill"></i>
+
+                    <h4>
+                        Progreso
+                    </h4>
+
+                    <p>
+                        Evolución y estadísticas
+                        del usuario.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-3">
+
+                <div class="system-card">
+
+                    <i class="bi bi-clipboard2-check-fill"></i>
+
+                    <h4>
+                        Rutinas
+                    </h4>
+
+                    <p>
+                        Entrenamientos asignados
+                        y seguimiento.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     DASHBOARD
+========================= -->
+
+<section class="section" id="progreso">
+
+    <div class="container">
+
+        <div class="section-title">
+
+            <h2>
+                Una experiencia más personalizada
+            </h2>
+
+            <p>
+                Ejemplo de cómo podría visualizar el usuario
+                su información.
+            </p>
+
+        </div>
+
+
+        <div class="dashboard">
+
+            <div class="dashboard-header">
+
+                <div>
+
+                    <h3>
+                        Hola, Carlos 👋
+                    </h3>
+
+                    <span>
+                        Tu progreso esta semana
+                    </span>
+
+                </div>
+
+                <div class="dashboard-user">
+                    Mi perfil
+                </div>
+
+            </div>
+
+
+            <div class="row g-3 mb-4">
+
+
+                <div class="col-md-4">
+
+                    <div class="stat">
+
+                        <span>
+                            Entrenamientos
+                        </span>
+
+                        <h3>
+                            4 / 5
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="col-md-4">
+
+                    <div class="stat">
+
+                        <span>
+                            Peso actual
+                        </span>
+
+                        <h3>
+                            77.5 kg
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="col-md-4">
+
+                    <div class="stat">
+
+                        <span>
+                            Progreso
+                        </span>
+
+                        <h3>
+                            +18%
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <h5>
+                Cumplimiento de objetivo
+            </h5>
+
+            <div class="progress-custom mt-3">
+
+                <div></div>
+
+            </div>
+
+            <div class="d-flex justify-content-between mt-2">
+
+                <small>
+                    Inicio
+                </small>
+
+                <small>
+                    75%
+                </small>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     IMPACTO
+========================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="section-title">
+
+            <h2>
+                ¿Cómo ayuda al negocio?
+            </h2>
+
+            <p>
+                El objetivo no es solamente digitalizar,
+                sino organizar y mejorar procesos.
+            </p>
+
+        </div>
+
+
+        <div class="row g-4">
+
+
+            <div class="col-md-6">
+
+                <div class="impact-card">
+
+                    <h4>
+                        🏋️ Para el cliente
+                    </h4>
+
+                    <ul class="impact-list">
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Mayor seguimiento de sus objetivos
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Rutinas disponibles digitalmente
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Historial de progreso
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Información centralizada
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-6">
+
+                <div class="impact-card">
+
+                    <h4>
+                        📊 Para el gimnasio
+                    </h4>
+
+                    <ul class="impact-list">
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Control de membresías
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Seguimiento de clientes
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Control de pagos
+                        </li>
+
+                        <li>
+                            <i class="bi bi-check-circle-fill"></i>
+                            Reportes para la administración
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================
+     CTA
+========================= -->
+
+<section class="cta" id="contacto">
+
+    <div class="container">
+
+        <h2>
+            El software puede adaptarse a cualquier negocio.
+        </h2>
+
+        <p>
+            FITGYM es solamente un ejemplo de cómo identificar
+            una necesidad y convertirla en una solución tecnológica.
+        </p>
+
+        <a href="#" class="btn-dark-custom">
+            Ver propuesta
+        </a>
+
+    </div>
+
+</section>
+
+
+
+<!-- FOOTER -->
+
+<footer>
+
+    <p class="mb-0">
+
+        <strong>FITGYM</strong>
+
+        · Propuesta de desarrollo de software
+
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>

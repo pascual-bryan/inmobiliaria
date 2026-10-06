@@ -1,0 +1,641 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Propiedad | INMOVA</title>
+
+    <link 
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- ========================================= -->
+    <!-- NAVBAR -->
+    <!-- ========================================= -->
+
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+
+        <div class="container">
+
+            <!-- LOGO -->
+            <a href="index.html">
+                <img 
+                    src="Imagenes/logo sin fondo.png"
+                    alt="INMOVA"
+                    class="logo-inmova"
+                >
+            </a>
+
+            <!-- MENÚ MÓVIL -->
+            <button 
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- MENÚ -->
+            <div 
+                class="collapse navbar-collapse"
+                id="navbarNav"
+            >
+
+                <ul class="navbar-nav ms-auto">
+
+                    <li class="nav-item">
+                        <a 
+                            class="nav-link"
+                            href="index.html"
+                        >
+                            Inicio
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a 
+                            class="nav-link"
+                            href="propiedades.html"
+                        >
+                            Propiedades
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a 
+                            class="nav-link"
+                            href="nosotros.html"
+                        >
+                            Nosotros
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a 
+                            class="nav-link"
+                            href="contacto.html"
+                        >
+                            Contacto
+                        </a>
+                    </li>
+
+                </ul>
+
+                <a 
+                    href="contacto.html"
+                    class="btn btn-primary ms-lg-3"
+                >
+                    Contáctanos
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+
+    <!-- ========================================= -->
+    <!-- DETALLE DE PROPIEDAD -->
+    <!-- ========================================= -->
+
+    <section class="property-detail-section">
+
+        <div class="container">
+
+            <!-- REGRESAR -->
+            <a 
+                href="propiedades.html"
+                class="back-link"
+            >
+                ← Volver a propiedades
+            </a>
+
+
+            <div class="row g-5 mt-2">
+
+
+                <!-- ===================================== -->
+                <!-- GALERÍA -->
+                <!-- ===================================== -->
+
+                <div class="col-lg-7">
+
+                    <!-- IMAGEN PRINCIPAL -->
+
+                    <div class="property-main-image">
+
+                        <img
+                            src="Imagenes/casa1.jpg"
+                            alt="Propiedad"
+                            id="propertyMainImage"
+                        >
+
+                    </div>
+
+
+                    <!-- MINIATURAS -->
+
+                    <div 
+                        class="row g-3 mt-3"
+                        id="propertyGallery"
+                    >
+
+                        <div class="col-4">
+
+                            <img
+                                src="Imagenes/casa1.jpg"
+                                class="property-thumbnail"
+                                alt="Imagen de propiedad"
+                                onclick="cambiarImagen(this)"
+                            >
+
+                        </div>
+
+
+                        <div class="col-4">
+
+                            <img
+                                src="Imagenes/casa2.jpg"
+                                class="property-thumbnail"
+                                alt="Imagen de propiedad"
+                                onclick="cambiarImagen(this)"
+                            >
+
+                        </div>
+
+
+                        <div class="col-4">
+
+                            <img
+                                src="Imagenes/casa3.jpg"
+                                class="property-thumbnail"
+                                alt="Imagen de propiedad"
+                                onclick="cambiarImagen(this)"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ===================================== -->
+                    <!-- VIDEO -->
+                    <!-- ===================================== -->
+
+                    <div 
+                        class="property-video mt-5"
+                        id="propertyVideoSection"
+                    >
+
+                        <h3 
+                            class="property-subtitle"
+                            id="propertyVideoTitle"
+                        >
+                            Conoce la propiedad
+                        </h3>
+
+                        <p 
+                            class="text-muted"
+                            id="propertyVideoDescription"
+                        >
+                            Conoce más detalles de esta propiedad.
+                        </p>
+
+                        <div class="ratio ratio-16x9">
+
+                            <video controls>
+
+                                <source
+                                    src="videos/propiedad.mp4"
+                                    type="video/mp4"
+                                >
+
+                                Tu navegador no soporta la reproducción
+                                de video.
+
+                            </video>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- ===================================== -->
+                <!-- INFORMACIÓN -->
+                <!-- ===================================== -->
+
+                <div class="col-lg-5">
+
+
+                    <!-- OPERACIÓN -->
+
+                    <span 
+                        class="property-operation"
+                        id="propertyOperation"
+                    >
+                        EN VENTA
+                    </span>
+
+
+                    <!-- TÍTULO -->
+
+                    <h1
+                        class="property-detail-title"
+                        id="propertyTitle"
+                    >
+                        Propiedad
+                    </h1>
+
+
+                    <!-- UBICACIÓN -->
+
+                    <p
+                        class="property-location"
+                        id="propertyLocation"
+                    >
+                        📍 Puebla, Puebla
+                    </p>
+
+
+                    <!-- PRECIO -->
+
+                    <h2
+                        class="property-price"
+                        id="propertyPrice"
+                    >
+                        $0
+                    </h2>
+
+
+
+                    <!-- ================================= -->
+                    <!-- CARACTERÍSTICAS GENERALES -->
+                    <!-- ================================= -->
+
+                    <div
+                        class="property-features"
+                        id="propertyFeatures"
+                    >
+
+                        <!--
+                            JavaScript colocará aquí las
+                            características correspondientes
+                            a cada tipo de propiedad.
+                        -->
+
+                    </div>
+
+
+
+                    <!-- ================================= -->
+                    <!-- CARACTERÍSTICAS DE TERRENO -->
+                    <!-- ================================= -->
+
+                    <div
+                        id="landDetails"
+                        class="d-none"
+                    >
+
+                        <h3 class="property-subtitle">
+                            Características del terreno
+                        </h3>
+
+
+                        <div class="row g-3">
+
+
+                            <!-- FRENTE -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Frente
+                                </strong>
+
+                                <p id="propertyFront">
+                                    -
+                                </p>
+
+                            </div>
+
+
+                            <!-- FONDO -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Fondo
+                                </strong>
+
+                                <p id="propertyBack">
+                                    -
+                                </p>
+
+                            </div>
+
+
+                            <!-- PRECIO POR METRO -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Precio por m²
+                                </strong>
+
+                                <p id="propertyPriceMeter">
+                                    -
+                                </p>
+
+                            </div>
+
+
+                            <!-- USO DE SUELO -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Uso de suelo
+                                </strong>
+
+                                <p id="propertyLandUse">
+                                    -
+                                </p>
+
+                            </div>
+
+
+                            <!-- SERVICIOS -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Servicios
+                                </strong>
+
+                                <p id="propertyServices">
+                                    -
+                                </p>
+
+                            </div>
+
+
+                            <!-- SITUACIÓN LEGAL -->
+
+                            <div class="col-md-6">
+
+                                <strong>
+                                    Situación legal
+                                </strong>
+
+                                <p id="propertyLegal">
+                                    -
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- ================================= -->
+                    <!-- DESCRIPCIÓN -->
+                    <!-- ================================= -->
+
+                    <h3 class="property-subtitle">
+                        Descripción
+                    </h3>
+
+
+                    <p
+                        class="property-description"
+                        id="propertyDescription"
+                    >
+                        Información de la propiedad.
+                    </p>
+
+
+
+                    <!-- ================================= -->
+                    <!-- BOTONES -->
+                    <!-- ================================= -->
+
+                    <div class="property-actions">
+
+
+                        <a
+                            href="contacto.html"
+                            class="btn btn-primary btn-lg w-100"
+                        >
+                            Solicitar información
+                        </a>
+
+
+                        <a
+                            href="https://wa.me/5210000000000"
+                            target="_blank"
+                            class="btn btn-outline-success btn-lg w-100"
+                        >
+                            Contactar por WhatsApp
+                        </a>
+
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ========================================= -->
+            <!-- LOTES DEL TERRENO -->
+            <!-- ========================================= -->
+
+            <div
+                class="row mt-5 d-none"
+                id="landLotsSection"
+            >
+
+                <div class="col-12">
+
+
+                    <h2 class="property-subtitle">
+                        Lotes disponibles
+                    </h2>
+
+
+                    <p class="text-muted">
+                        Consulta la superficie, medidas y disponibilidad
+                        de cada lote.
+                    </p>
+
+
+                    <!-- TABLA -->
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Lote
+                                    </th>
+
+                                    <th>
+                                        Superficie
+                                    </th>
+
+                                    <th>
+                                        Medidas principales
+                                    </th>
+
+                                    <th>
+                                        Estado
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="landLotsTable">
+
+                                <!--
+                                    Los lotes se cargarán
+                                    posteriormente desde Django.
+                                -->
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- ================================= -->
+                    <!-- LEYENDA -->
+                    <!-- ================================= -->
+
+                    <div class="mt-3">
+
+                        <span class="me-3">
+                            🟢 Disponible
+                        </span>
+
+                        <span class="me-3">
+                            🟡 Apartado
+                        </span>
+
+                        <span>
+                            🔴 Vendido
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================================= -->
+    <!-- CTA -->
+    <!-- ========================================= -->
+
+    <section class="cta-section">
+
+        <div class="container text-center">
+
+            <h2>
+                ¿Te interesa esta propiedad?
+            </h2>
+
+            <p>
+                Ponte en contacto con nuestro equipo y recibe
+                más información.
+            </p>
+
+            <a
+                href="contacto.html"
+                class="btn btn-light"
+            >
+                Contactar ahora
+            </a>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================================= -->
+    <!-- FOOTER -->
+    <!-- ========================================= -->
+
+    <footer class="footer">
+
+        <div class="container text-center">
+
+            <h5>
+                INMOVA
+            </h5>
+
+            <p>
+                Plataforma Integral de Gestión Inmobiliaria
+            </p>
+
+            <p class="mb-0">
+                © 2026 INMOVA. Todos los derechos reservados.
+            </p>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- ========================================= -->
+    <!-- BOOTSTRAP -->
+    <!-- ========================================= -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+
+    <!-- ========================================= -->
+    <!-- JAVASCRIPT INMOVA -->
+    <!-- ========================================= -->
+
+    <script src="js/main.js"></script>
+
+</body>
+
+</html>
