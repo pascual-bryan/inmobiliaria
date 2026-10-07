@@ -85,5 +85,64 @@ class Propiedad(models.Model):
     )
 
 
-    def __str__(self):
-        return self.titulo
+# clase Lote
+class Lote(models.Model):
+
+    ESTADOS = [
+        ("disponible", "Disponible"),
+        ("apartado", "Apartado"),
+        ("vendido", "Vendido"),
+    ]
+
+    propiedad = models.ForeignKey(
+        Propiedad,
+        related_name="lotes",
+        on_delete=models.CASCADE
+    )
+
+    numero = models.PositiveIntegerField()
+
+    superficie = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    frente = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+
+    fondo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+
+    medidas = models.CharField(
+        max_length=200,
+        blank=True,
+        default=""
+    )
+
+    precio = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default="disponible"
+    )
+
+def __str__(self):
+    return f"Lote {self.numero} - {self.propiedad.titulo}"
+
+
+
+    

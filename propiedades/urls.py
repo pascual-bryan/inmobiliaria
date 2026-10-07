@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import PropiedadViewSet
+from .views import PropiedadViewSet, LoteViewSet
 
 
 router = DefaultRouter()
@@ -9,5 +9,12 @@ router.register(
     PropiedadViewSet,
     basename='propiedad'
 )
+
+router.register(
+    r'lotes',
+    LoteViewSet,
+    basename='lote'
+)
+
 
 urlpatterns = router.urls
