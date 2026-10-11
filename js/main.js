@@ -1,11 +1,11 @@
+
 // ==========================================
-// INICIO DE INMOVA
+// BIENES Y RAÍCES OLAYA
+// ARCHIVO PRINCIPAL JAVASCRIPT
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
-
-    console.log("INMOVA iniciado correctamente");
-
+    console.log("Bienes y Raíces Olaya iniciado correctamente");
 });
 
 
@@ -13,98 +13,142 @@ document.addEventListener("DOMContentLoaded", function () {
 // API DE DJANGO
 // ==========================================
 
-const API_URL =
-    "http://127.0.0.1:8000/api/propiedades/";
-
-const LOTES_API_URL =
-    "http://127.0.0.1:8000/api/lotes/";
-
-const CITAS_API_URL =
-    "http://127.0.0.1:8000/api/citas/";
+const API_URL = "http://127.0.0.1:8000/api/propiedades/";
+const LOTES_API_URL = "http://127.0.0.1:8000/api/lotes/";
+const CITAS_API_URL = "http://127.0.0.1:8000/api/citas/";
 
 
 // ==========================================
-// FUNCIÓN PARA OBTENER URL DE IMAGEN
+// RUTAS DE IMÁGENES
+// ==========================================
+
+// Las imágenes se encuentran en:
+// proyecto/static/Imagenes/
+
+const IMAGENES_URL = "/static/Imagenes/";
+
+// Imagen de respaldo: debe existir con este nombre.
+const IMAGEN_DEFAULT = IMAGENES_URL + "house%202.jpg";
+
+
+// ==========================================
+// CONSTRUIR URL DE IMAGEN
 // ==========================================
 
 window.obtenerUrlImagen = function (imagen) {
 
-    const imagenDefault =
-        "Imagenes/casa1.jpg";
-
-    if (!imagen) {
-        return imagenDefault;
+    if (!imagen || !String(imagen).trim()) {
+        return IMAGEN_DEFAULT;
     }
 
-    let url =
-        String(imagen).trim();
+    let ruta = String(imagen).trim();
 
-    if (
-        url.includes("/propiedades/") &&
-        !url.includes("/media/propiedades/")
-    ) {
+    // Si Django devuelve una URL completa.
+    if (/^https?:\/\//i.test(ruta)) {
+        try {
+            const url = new URL(ruta);
 
-        url =
-            url.replace(
-                "/propiedades/",
-                "/media/propiedades/"
-            );
+            const esServidorLocal =
+                (url.hostname === "127.0.0.1" ||
+                 url.hostname === "localhost") &&
+                url.port === "8000";
 
+            // Conservar las imágenes de servidores externos.
+            if (!esServidorLocal) {
+                return ruta;
+            }
+
+            ruta = url.pathname;
+
+        } catch (error) {
+            console.error("URL de imagen inválida:", imagen);
+            return IMAGEN_DEFAULT;
+        }
     }
 
-    if (
-        url.startsWith("propiedades/")
-    ) {
+    // Quitar parámetros y fragmentos.
+    ruta = ruta
+        .split("?")[0]
+        .split("#")[0]
+        .replace(/\\/g, "/");
 
-        url =
-            "/media/" + url;
+    // Quitar barras iniciales.
+    ruta = ruta.replace(/^\/+/, "");
 
+    // Eliminar prefijos conocidos.
+    ruta = ruta.replace(/^static\//i, "");
+    ruta = ruta.replace(/^media\/propiedades\//i, "");
+
+    // Quitar la carpeta Imagenes si ya viene incluida.
+    ruta = ruta.replace(/^Imagenes\//i, "");
+
+    // Quitar la carpeta propiedades si viene dentro de Imagenes.
+    ruta = ruta.replace(/^propiedades\//i, "");
+
+    if (!ruta) {
+        return IMAGEN_DEFAULT;
     }
 
-    if (
-        url.startsWith("/media/")
-    ) {
+    // Codificar espacios y caracteres especiales.
+    const rutaCodificada = ruta
+        .split("/")
+        .map(function (parte) {
+            return encodeURIComponent(parte);
+        })
+        .join("/");
 
-        return url;
-
-    }
-
-    if (
-        url.startsWith("http://") ||
-        url.startsWith("https://")
-    ) {
-
-        return url;
-
-    }
-
-    return url;
-
+    return IMAGENES_URL + rutaCodificada;
 };
 
 
 // ==========================================
-// FILTROS DE PROPIEDADES
+// CONFIGURAR IMAGEN Y RESPALDO
+// ==========================================
+
+function configurarImagen(imagenElemento, rutaImagen) {
+
+    if (!imagenElemento) return;
+
+    let usandoRespaldo = false;
+
+    imagenElemento.onerror = function () {
+
+        if (usandoRespaldo) {
+            this.onerror = null;
+
+            console.error(
+                "No se encontró la imagen:",
+                this.src
+            );
+
+            return;
+        }
+
+        usandoRespaldo = true;
+
+        console.warn(
+            "Imagen no encontrada. Se utilizará la imagen de respaldo:",
+            this.src
+        );
+
+        this.src = IMAGEN_DEFAULT;
+    };
+
+    imagenElemento.src = rutaImagen || IMAGEN_DEFAULT;
+}
+
+
+// ==========================================
+// FILTROS Y CARGA DE PROPIEDADES
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const searchButton =
-        document.getElementById("searchProperties");
-
-    // ======================================
-    // CARGAR PROPIEDADES SIEMPRE
-    // ======================================
+    const searchButton = document.getElementById("searchProperties");
 
     cargarPropiedades();
 
-    // ======================================
-    // FILTROS
-    // ======================================
-
-    if (!searchButton) {
-        return;
-    }
+    if (!searchButton) return;
 
     searchButton.addEventListener("click", function () {
 
@@ -117,14 +161,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const ciudad =
             document.getElementById("propertyCity")?.value || "";
 
-        cargarPropiedades(
-            tipo,
-            operacion,
-            ciudad
-        );
-
+        cargarPropiedades(tipo, operacion, ciudad);
     });
-
 });
 
 
@@ -138,181 +176,153 @@ async function cargarPropiedades(
     ciudad = ""
 ) {
 
-    const grid =
-        document.getElementById(
-            "propertyGrid"
-        );
+    const grid = document.getElementById("propertyGrid");
 
-    if (!grid) {
-        return;
-    }
+    if (!grid) return;
 
-    const noResults =
-        document.getElementById(
-            "noResults"
-        );
-
-    const counter =
-        document.getElementById(
-            "propertyCounter"
-        );
+    const noResults = document.getElementById("noResults");
+    const counter = document.getElementById("propertyCounter");
 
     try {
 
-        const respuesta =
-            await fetch(API_URL);
+        const respuesta = await fetch(API_URL);
 
         if (!respuesta.ok) {
             throw new Error(
-                "No se pudieron cargar las propiedades"
+                "No se pudieron cargar las propiedades. HTTP " +
+                respuesta.status
             );
         }
 
-        const propiedades =
-            await respuesta.json();
+        const propiedades = await respuesta.json();
 
-        let propiedadesFiltradas =
-            propiedades.filter(
-                function (propiedad) {
-
-                    const coincideTipo =
-                        !tipo ||
-                        propiedad.tipo === tipo;
-
-                    const coincideOperacion =
-                        !operacion ||
-                        propiedad.operacion === operacion;
-
-                    const coincideCiudad =
-                        !ciudad ||
-                        propiedad.ciudad === ciudad;
-
-                    return (
-                        coincideTipo &&
-                        coincideOperacion &&
-                        coincideCiudad
-                    );
-
-                }
+        if (!Array.isArray(propiedades)) {
+            throw new Error(
+                "La API no devolvió una lista de propiedades."
             );
+        }
+
+        const propiedadesFiltradas = propiedades.filter(
+            function (propiedad) {
+
+                const coincideTipo =
+                    !tipo || propiedad.tipo === tipo;
+
+                const coincideOperacion =
+                    !operacion ||
+                    propiedad.operacion === operacion;
+
+                const coincideCiudad =
+                    !ciudad || propiedad.ciudad === ciudad;
+
+                return (
+                    coincideTipo &&
+                    coincideOperacion &&
+                    coincideCiudad
+                );
+            }
+        );
 
         grid.innerHTML = "";
 
-        if (
-            propiedadesFiltradas.length === 0
-        ) {
+        if (propiedadesFiltradas.length === 0) {
 
             if (noResults) {
-                noResults.classList.remove(
-                    "d-none"
-                );
+                noResults.classList.remove("d-none");
             }
 
             if (counter) {
-                counter.textContent =
-                    "0 propiedades";
+                counter.textContent = "0 propiedades";
             }
 
             return;
-
         }
 
         if (noResults) {
-            noResults.classList.add(
-                "d-none"
-            );
+            noResults.classList.add("d-none");
         }
 
         if (counter) {
-
             counter.textContent =
                 `${propiedadesFiltradas.length} ${
                     propiedadesFiltradas.length === 1
                         ? "propiedad"
                         : "propiedades"
                 }`;
-
         }
 
-        propiedadesFiltradas.forEach(
-            function (propiedad) {
+        propiedadesFiltradas.forEach(function (propiedad) {
 
-                const imagen =
-                    obtenerUrlImagen(
-                        propiedad.imagen_principal
-                    );
+            // Obtener la ruta de la imagen de esta propiedad.
+            const imagen = window.obtenerUrlImagen(
+                propiedad.imagen_principal
+            );
 
-                const precio =
-                    Number(
-                        propiedad.precio || 0
-                    ).toLocaleString(
-                        "es-MX",
-                        {
-                            style: "currency",
-                            currency: "MXN"
-                        }
-                    );
+            console.log(
+                "Imagen de propiedad:",
+                propiedad.titulo,
+                propiedad.imagen_principal,
+                "=>",
+                imagen
+            );
 
-                const tarjeta =
-                    document.createElement(
-                        "div"
-                    );
+            const precio = Number(
+                propiedad.precio || 0
+            ).toLocaleString("es-MX", {
+                style: "currency",
+                currency: "MXN"
+            });
 
-                tarjeta.className =
-                    "col-md-6 col-lg-4";
+            const tarjeta = document.createElement("div");
 
-                tarjeta.innerHTML = `
+            tarjeta.className = "col-md-6 col-lg-4";
 
-                    <div class="card h-100 shadow-sm">
+            tarjeta.innerHTML = `
+                <div class="card h-100 shadow-sm">
 
-                        <img
-                            src="${imagen}"
-                            class="card-img-top"
-                            alt="${propiedad.titulo}"
-                            style="
-                                height:230px;
-                                object-fit:cover;
-                            "
+                    <img
+                        class="card-img-top"
+                        alt="${propiedad.titulo || "Propiedad"}"
+                        style="height:230px; object-fit:cover;"
+                        loading="lazy"
+                    >
+
+                    <div class="card-body d-flex flex-column">
+
+                        <h5 class="card-title">
+                            ${propiedad.titulo || ""}
+                        </h5>
+
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-geo-alt"></i>
+                            ${propiedad.ciudad || ""}
+                        </p>
+
+                        <p class="fw-bold text-primary">
+                            ${precio}
+                        </p>
+
+                        <p class="card-text">
+                            ${propiedad.descripcion || ""}
+                        </p>
+
+                        <a
+                            href="propiedad.html?id=${encodeURIComponent(propiedad.id)}"
+                            class="btn btn-primary w-100 mt-auto"
                         >
-
-                        <div class="card-body">
-
-                            <h5 class="card-title">
-                                ${propiedad.titulo}
-                            </h5>
-
-                            <p class="text-muted mb-2">
-                                <i class="bi bi-geo-alt"></i>
-                                ${propiedad.ciudad}
-                            </p>
-
-                            <p class="fw-bold text-primary">
-                                ${precio}
-                            </p>
-
-                            <p class="card-text">
-                                ${propiedad.descripcion || ""}
-                            </p>
-
-                            <a
-                                href="propiedad.html?id=${propiedad.id}"
-                                class="btn btn-primary w-100"
-                            >
-                                Ver propiedad
-                            </a>
-
-                        </div>
+                            Ver propiedad
+                        </a>
 
                     </div>
+                </div>
+            `;
 
-                `;
+            const imagenElemento = tarjeta.querySelector("img");
 
-                grid.appendChild(
-                    tarjeta
-                );
+            configurarImagen(imagenElemento, imagen);
 
-            }
-        );
+            grid.appendChild(tarjeta);
+        });
 
     } catch (error) {
 
@@ -322,504 +332,373 @@ async function cargarPropiedades(
         );
 
         grid.innerHTML = `
-
             <div class="col-12 text-center py-5">
 
-                <h4>
-                    No se pudieron cargar
-                    las propiedades.
-                </h4>
+                <h4>No se pudieron cargar las propiedades.</h4>
 
                 <p class="text-muted">
-                    Verifica que Django
-                    esté funcionando.
+                    Verifica que Django esté funcionando y que la API
+                    de propiedades esté disponible.
                 </p>
 
             </div>
-
         `;
-
     }
-
 }
 
 
 // ==========================================
-// CARGAR LOTES
+// CARGAR LOTES DE UNA PROPIEDAD
 // ==========================================
 
-async function cargarLotes(
-    propiedadId
-) {
 
-    const seccion =
-        document.getElementById(
-            "landLotsSection"
-        );
+async function cargarLotes(propiedadId) {
 
-    const tabla =
-        document.getElementById(
-            "landLotsTable"
-        );
+    const seccion = document.getElementById("landLotsSection");
+    const tabla = document.getElementById("landLotsTable");
 
-    if (!seccion || !tabla) {
-        return;
-    }
+    if (!seccion || !tabla) return;
 
     try {
 
-        const respuesta =
-            await fetch(
-                LOTES_API_URL
-            );
+        const respuesta = await fetch(LOTES_API_URL);
 
         if (!respuesta.ok) {
-            throw new Error(
-                "No se pudieron cargar los lotes"
-            );
+            throw new Error("No se pudieron cargar los lotes.");
         }
 
-        const lotes =
-            await respuesta.json();
+        const lotes = await respuesta.json();
 
-        const lotesPropiedad =
-            lotes.filter(
-                function (lote) {
-
-                    return Number(
-                        lote.propiedad
-                    ) === Number(
-                        propiedadId
-                    );
-
-                }
-            );
+        const lotesPropiedad = lotes.filter(function (lote) {
+            return Number(lote.propiedad) === Number(propiedadId);
+        });
 
         tabla.innerHTML = "";
 
-        if (
-            lotesPropiedad.length === 0
-        ) {
-
-            seccion.style.display =
-                "none";
-
+        if (lotesPropiedad.length === 0) {
+            seccion.style.display = "none";
             return;
-
         }
 
-        seccion.style.display =
-            "block";
+        seccion.style.display = "block";
 
-        lotesPropiedad.forEach(
-            function (lote) {
+        lotesPropiedad.forEach(function (lote) {
 
-                let estadoTexto =
-                    lote.estado || "disponible";
+            let estadoTexto;
+            let estadoClase;
 
-                let estadoClase =
-                    "bg-success";
-
-                if (
-                    lote.estado === "apartado"
-                ) {
-
-                    estadoTexto =
-                        "Apartado";
-
-                    estadoClase =
-                        "bg-warning text-dark";
-
-                }
-
-                if (
-                    lote.estado === "vendido"
-                ) {
-
-                    estadoTexto =
-                        "Vendido";
-
-                    estadoClase =
-                        "bg-danger";
-
-                }
-
-                if (
-                    lote.estado === "disponible"
-                ) {
-
-                    estadoTexto =
-                        "Disponible";
-
-                }
-
-                const precio =
-                    lote.precio
-                        ? Number(
-                            lote.precio
-                        ).toLocaleString(
-                            "es-MX",
-                            {
-                                style: "currency",
-                                currency: "MXN"
-                            }
-                        )
-                        : "Consultar";
-
-                const fila =
-                    document.createElement(
-                        "tr"
-                    );
-
-                fila.innerHTML = `
-
-                    <td>
-                        Lote ${lote.numero}
-                    </td>
-
-                    <td>
-                        ${lote.superficie || "-"}
-                        m²
-                    </td>
-
-                    <td>
-                        ${lote.frente || "-"}
-                        m
-                    </td>
-
-                    <td>
-                        ${lote.fondo || "-"}
-                        m
-                    </td>
-
-                    <td>
-                        ${lote.medidas || "-"}
-                    </td>
-
-                    <td>
-                        ${precio}
-                    </td>
-
-                    <td>
-
-                        <span class="badge ${estadoClase}">
-                            ${estadoTexto}
-                        </span>
-
-                    </td>
-
-                `;
-
-                tabla.appendChild(
-                    fila
-                );
-
+            if (lote.estado === "apartado") {
+                estadoTexto = "Apartado";
+                estadoClase = "bg-warning text-dark";
+            } else if (lote.estado === "vendido") {
+                estadoTexto = "Vendido";
+                estadoClase = "bg-danger";
+            } else {
+                estadoTexto = "Disponible";
+                estadoClase = "bg-success";
             }
-        );
+
+            const precio = lote.precio !== null &&
+                           lote.precio !== undefined &&
+                           lote.precio !== ""
+                ? Number(lote.precio).toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN"
+                })
+                : "Consultar";
+
+            const fila = document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>Lote ${lote.numero ?? "-"}</td>
+                <td>${lote.superficie || "-"} m²</td>
+                <td>${lote.frente || "-"} m</td>
+                <td>${lote.fondo || "-"} m</td>
+                <td>${lote.medidas || "-"}</td>
+                <td>${precio}</td>
+                <td class="lote-precios"></td>
+                <td>
+                    <span class="badge ${estadoClase}">
+                        ${estadoTexto}
+                    </span>
+                </td>
+            `;
+
+            // Mostrar precio total, enganche, mensualidades y contado.
+            // textContent conserva el texto de forma segura.
+            const celdaPrecios = fila.querySelector(".lote-precios");
+
+            celdaPrecios.textContent =
+                lote.informacion_precios || "Consultar";
+
+            tabla.appendChild(fila);
+        });
 
     } catch (error) {
 
-        console.error(
-            "Error cargando lotes:",
-            error
-        );
+        console.error("Error cargando lotes:", error);
 
-        seccion.style.display =
-            "none";
-
+        seccion.style.display = "none";
     }
-
 }
 
 
+
+
+// termina funcion de cargar lote
+
+
 // ==========================================
-// DETALLE DE PROPIEDAD
+// INICIAR DETALLE DE PROPIEDAD
 // ==========================================
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-        const urlParams =
-            new URLSearchParams(
-                window.location.search
-            );
+    const urlParams = new URLSearchParams(
+        window.location.search
+    );
 
-        const id =
-            urlParams.get("id");
+    const id = urlParams.get("id");
 
-        if (!id) {
-            return;
-        }
+    if (!id) return;
 
-        const propertyTitle =
-            document.getElementById(
-                "propertyTitle"
-            );
-
-        if (!propertyTitle) {
-            return;
-        }
-
-        cargarDetallePropiedad(id);
-
+    if (!document.getElementById("propertyTitle")) {
+        return;
     }
-);
+
+    cargarDetallePropiedad(id);
+});
 
 
 // ==========================================
-// CARGAR DETALLE
+// CARGAR DETALLE DE PROPIEDAD
 // ==========================================
 
-async function cargarDetallePropiedad(
-    id
-) {
+async function cargarDetallePropiedad(id) {
 
     try {
 
-        const respuesta =
-            await fetch(
-                `${API_URL}${id}/`
-            );
+        const respuesta = await fetch(
+            `${API_URL}${encodeURIComponent(id)}/`
+        );
 
         if (!respuesta.ok) {
-
             throw new Error(
-                "No se pudo cargar la propiedad"
+                "No se pudo cargar la propiedad."
             );
-
         }
 
-        const propiedad =
-            await respuesta.json();
+        const propiedad = await respuesta.json();
 
         console.log(
             "Propiedad cargada:",
             propiedad
         );
 
-        const imagen =
-            obtenerUrlImagen(
-                propiedad.imagen_principal
-            );
+        const imagen = window.obtenerUrlImagen(
+            propiedad.imagen_principal
+        );
 
         const elementos = {
 
             propertyMainImage:
-                document.getElementById(
-                    "propertyMainImage"
-                ),
+                document.getElementById("propertyMainImage"),
 
             propertyTitle:
-                document.getElementById(
-                    "propertyTitle"
-                ),
+                document.getElementById("propertyTitle"),
 
             propertyLocation:
-                document.getElementById(
-                    "propertyLocation"
-                ),
+                document.getElementById("propertyLocation"),
 
             propertyPrice:
-                document.getElementById(
-                    "propertyPrice"
-                ),
+                document.getElementById("propertyPrice"),
 
             propertyDescription:
-                document.getElementById(
-                    "propertyDescription"
-                ),
+                document.getElementById("propertyDescription"),
 
             propertyArea:
-                document.getElementById(
-                    "propertyArea"
-                ),
+                document.getElementById("propertyArea"),
 
             propertyBedrooms:
-                document.getElementById(
-                    "propertyBedrooms"
-                ),
+                document.getElementById("propertyBedrooms"),
 
             propertyBathrooms:
-                document.getElementById(
-                    "propertyBathrooms"
-                ),
+                document.getElementById("propertyBathrooms"),
 
             propertyParking:
-                document.getElementById(
-                    "propertyParking"
-                ),
+                document.getElementById("propertyParking"),
 
             propertyFront:
-                document.getElementById(
-                    "propertyFront"
-                ),
+                document.getElementById("propertyFront"),
 
             propertyBack:
-                document.getElementById(
-                    "propertyBack"
-                ),
+                document.getElementById("propertyBack"),
 
             propertyPriceMeter:
-                document.getElementById(
-                    "propertyPriceMeter"
-                ),
+                document.getElementById("propertyPriceMeter"),
 
             propertyLandUse:
-                document.getElementById(
-                    "propertyLandUse"
-                ),
+                document.getElementById("propertyLandUse"),
 
             propertyServices:
-                document.getElementById(
-                    "propertyServices"
-                ),
+                document.getElementById("propertyServices"),
 
             propertyLegal:
-                document.getElementById(
-                    "propertyLegal"
-                )
-
+                document.getElementById("propertyLegal")
         };
 
+        // IMAGEN PRINCIPAL
 
-        // ======================================
-        // IMAGEN
-        // ======================================
-
-        if (
-            elementos.propertyMainImage
-        ) {
-
-            elementos.propertyMainImage.src =
-                imagen;
-
+        if (elementos.propertyMainImage) {
+            configurarImagen(
+                elementos.propertyMainImage,
+                imagen
+            );
         }
 
+        // INFORMACIÓN GENERAL
 
-        // ======================================
-        // INFORMACIÓN PRINCIPAL
-        // ======================================
-
-        if (
-            elementos.propertyTitle
-        ) {
-
+        if (elementos.propertyTitle) {
             elementos.propertyTitle.textContent =
                 propiedad.titulo || "";
-
         }
 
-        if (
-            elementos.propertyLocation
-        ) {
-
+        if (elementos.propertyLocation) {
             elementos.propertyLocation.textContent =
-                `${propiedad.ubicacion || ""}, ${
-                    propiedad.ciudad || ""
-                }`;
-
+                `${propiedad.ubicacion || ""}, ${propiedad.ciudad || ""}`;
         }
 
-        if (
-            elementos.propertyPrice
-        ) {
+        // ==========================================
+        // GOOGLE MAPS
+        // ==========================================
+
+        let botonMaps =
+            document.getElementById("btnGoogleMaps");
+
+        if (!botonMaps && elementos.propertyLocation) {
+
+            botonMaps = document.createElement("a");
+
+            botonMaps.id = "btnGoogleMaps";
+            botonMaps.className = "btn btn-warning mt-3";
+            botonMaps.textContent =
+                "Ver ubicación en Google Maps";
+
+            botonMaps.target = "_blank";
+            botonMaps.rel = "noopener noreferrer";
+            botonMaps.style.display = "none";
+
+            elementos.propertyLocation.insertAdjacentElement(
+                "afterend",
+                botonMaps
+            );
+        }
+
+        if (botonMaps) {
+
+            const enlaceMaps =
+                typeof propiedad.ubicacion_maps === "string"
+                    ? propiedad.ubicacion_maps.trim()
+                    : "";
+
+            try {
+
+                const urlMaps = new URL(enlaceMaps);
+
+                if (
+                    enlaceMaps &&
+                    (
+                        urlMaps.protocol === "https:" ||
+                        urlMaps.protocol === "http:"
+                    )
+                ) {
+
+                    botonMaps.href = urlMaps.href;
+                    botonMaps.style.display = "inline-block";
+
+                } else {
+
+                    botonMaps.removeAttribute("href");
+                    botonMaps.style.display = "none";
+                }
+
+            } catch (error) {
+
+                botonMaps.removeAttribute("href");
+                botonMaps.style.display = "none";
+            }
+        }
+
+        // PRECIO
+
+        if (elementos.propertyPrice) {
 
             elementos.propertyPrice.textContent =
-                Number(
-                    propiedad.precio || 0
-                ).toLocaleString(
+                Number(propiedad.precio || 0).toLocaleString(
                     "es-MX",
                     {
                         style: "currency",
                         currency: "MXN"
                     }
                 );
-
         }
 
-        if (
-            elementos.propertyDescription
-        ) {
+        // DESCRIPCIÓN
 
+        if (elementos.propertyDescription) {
             elementos.propertyDescription.textContent =
                 propiedad.descripcion || "";
-
         }
 
+        // SUPERFICIE
 
-        // ======================================
-        // CARACTERÍSTICAS
-        // ======================================
-
-        if (
-            elementos.propertyArea
-        ) {
-
+        if (elementos.propertyArea) {
             elementos.propertyArea.textContent =
                 propiedad.metros_terreno || "0";
-
         }
 
-        if (
-            elementos.propertyBedrooms
-        ) {
+        // RECÁMARAS
 
+        if (elementos.propertyBedrooms) {
             elementos.propertyBedrooms.textContent =
                 propiedad.recamaras || "0";
-
         }
 
-        if (
-            elementos.propertyBathrooms
-        ) {
+        // BAÑOS
 
+        if (elementos.propertyBathrooms) {
             elementos.propertyBathrooms.textContent =
                 propiedad.banos || "0";
-
         }
 
-        if (
-            elementos.propertyParking
-        ) {
+        // ESTACIONAMIENTOS
 
+        if (elementos.propertyParking) {
             elementos.propertyParking.textContent =
                 propiedad.estacionamientos || "0";
-
         }
 
+        // FRENTE
 
-        // ======================================
-        // DATOS DEL TERRENO
-        // ======================================
-
-        if (
-            elementos.propertyFront
-        ) {
-
+        if (elementos.propertyFront) {
             elementos.propertyFront.textContent =
                 propiedad.frente || "-";
-
         }
 
-        if (
-            elementos.propertyBack
-        ) {
+        // FONDO
 
+        if (elementos.propertyBack) {
             elementos.propertyBack.textContent =
                 propiedad.fondo || "-";
-
         }
 
-        if (
-            elementos.propertyPriceMeter
-        ) {
+        // PRECIO POR METRO CUADRADO
+
+        if (elementos.propertyPriceMeter) {
 
             elementos.propertyPriceMeter.textContent =
                 propiedad.precio_metro
-                    ? Number(
-                        propiedad.precio_metro
-                    ).toLocaleString(
+                    ? Number(propiedad.precio_metro).toLocaleString(
                         "es-MX",
                         {
                             style: "currency",
@@ -827,76 +706,46 @@ async function cargarDetallePropiedad(
                         }
                     )
                     : "-";
-
         }
 
-        if (
-            elementos.propertyLandUse
-        ) {
+        // USO DE SUELO
 
+        if (elementos.propertyLandUse) {
             elementos.propertyLandUse.textContent =
                 propiedad.uso_suelo || "-";
-
         }
 
-        if (
-            elementos.propertyServices
-        ) {
+        // SERVICIOS
 
+        if (elementos.propertyServices) {
             elementos.propertyServices.textContent =
                 propiedad.servicios || "-";
-
         }
 
-        if (
-            elementos.propertyLegal
-        ) {
+        // SITUACIÓN LEGAL
 
+        if (elementos.propertyLegal) {
             elementos.propertyLegal.textContent =
                 propiedad.situacion_legal || "-";
-
         }
 
-
-        // ======================================
-        // MOSTRAR / OCULTAR DATOS DE TERRENO
-        // ======================================
+        // MOSTRAR DATOS DE TERRENO
 
         const landDetails =
-            document.getElementById(
-                "landDetails"
-            );
+            document.getElementById("landDetails");
 
-        if (
-            landDetails
-        ) {
+        if (landDetails) {
 
-            if (
+            landDetails.style.display =
                 propiedad.tipo &&
-                propiedad.tipo.toLowerCase()
-                    .includes("terreno")
-            ) {
-
-                landDetails.style.display =
-                    "block";
-
-            } else {
-
-                landDetails.style.display =
-                    "none";
-
-            }
-
+                propiedad.tipo.toLowerCase().includes("terreno")
+                    ? "block"
+                    : "none";
         }
 
+        // CARGAR LOTES RELACIONADOS
 
-        // ======================================
-        // CARGAR LOTES
-        // ======================================
-
-        cargarLotes(
-            propiedad.id
-        );
+        cargarLotes(propiedad.id);
 
     } catch (error) {
 
@@ -904,9 +753,7 @@ async function cargarDetallePropiedad(
             "Error cargando detalle:",
             error
         );
-
     }
-
 }
 
 
@@ -914,34 +761,22 @@ async function cargarDetallePropiedad(
 // CAMBIAR IMAGEN PRINCIPAL
 // ==========================================
 
-function cambiarImagen(
-    imagen
-) {
+function cambiarImagen(imagen) {
 
     const principal =
-        document.getElementById(
-            "propertyMainImage"
-        );
+        document.getElementById("propertyMainImage");
 
-    if (
-        !principal ||
-        !imagen
-    ) {
-        return;
-    }
+    if (!principal || !imagen) return;
 
-    principal.src =
-        imagen.src;
-
+    configurarImagen(
+        principal,
+        imagen.src
+    );
 }
 
-// ==========================================
-// SISTEMA DE CITAS - INMOVA
-// ==========================================
-
 
 // ==========================================
-// HORARIOS DISPONIBLES
+// SISTEMA DE CITAS
 // ==========================================
 
 const HORARIOS_CITA = [
@@ -956,7 +791,7 @@ const HORARIOS_CITA = [
 
 
 // ==========================================
-// INICIAR SISTEMA
+// INICIAR FORMULARIO DE CITAS
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -970,214 +805,129 @@ document.addEventListener("DOMContentLoaded", function () {
     const fecha =
         document.getElementById("appointmentDate");
 
-    const boton =
-        document.getElementById("confirmAppointment");
-
-
     if (!formulario || !propiedad || !fecha) {
-
-        console.log(
-            "INMOVA: formulario de citas no encontrado."
-        );
-
         return;
-
     }
 
-
     console.log(
-        "INMOVA: sistema de citas iniciado correctamente."
+        "Olaya: sistema de citas iniciado correctamente."
     );
 
-
-    // ======================================
-    // FECHA MÍNIMA = HOY
-    // ======================================
+    // Evitar seleccionar fechas anteriores a hoy.
 
     const hoy = new Date();
 
-    const año =
-        hoy.getFullYear();
+    const año = hoy.getFullYear();
 
-    const mes =
-        String(
-            hoy.getMonth() + 1
-        ).padStart(2, "0");
+    const mes = String(
+        hoy.getMonth() + 1
+    ).padStart(2, "0");
 
-    const dia =
-        String(
-            hoy.getDate()
-        ).padStart(2, "0");
+    const dia = String(
+        hoy.getDate()
+    ).padStart(2, "0");
 
-    fecha.min =
-        `${año}-${mes}-${dia}`;
-
-
-    // ======================================
-    // CARGAR PROPIEDADES
-    // ======================================
+    fecha.min = `${año}-${mes}-${dia}`;
 
     cargarPropiedadesParaCitas();
 
+    // CAMBIAR PROPIEDAD
 
-    // ======================================
-    // CAMBIO DE PROPIEDAD
-    // ======================================
+    propiedad.addEventListener("change", function () {
 
-    propiedad.addEventListener(
-        "change",
-        function () {
+        limpiarHorarios();
+        ocultarDatosCliente();
 
-            limpiarHorarios();
+        fecha.value = "";
+    });
 
-            ocultarDatosCliente();
+    // CAMBIAR FECHA
 
-            fecha.value = "";
+    fecha.addEventListener("change", function () {
 
-        }
-    );
+        const fechaSeleccionada = fecha.value;
 
+        limpiarHorarios();
+        ocultarDatosCliente();
 
-    // ======================================
-    // CAMBIO DE FECHA
-    // ======================================
+        if (!fechaSeleccionada) return;
 
-    fecha.addEventListener(
-        "change",
-        function () {
+        if (!propiedad.value) {
 
-            const fechaSeleccionada =
-                fecha.value;
+            const contenedor =
+                document.getElementById("appointmentTimes");
 
-            limpiarHorarios();
-
-            ocultarDatosCliente();
-
-            if (!fechaSeleccionada) {
-                return;
+            if (contenedor) {
+                contenedor.textContent =
+                    "Primero selecciona una propiedad.";
             }
 
-            cargarHorariosDisponibles(
-                fechaSeleccionada
-            );
-
+            return;
         }
-    );
 
+        cargarHorariosDisponibles(
+            fechaSeleccionada
+        );
+    });
 
-    // ======================================
-    // FORMULARIO
-    // ======================================
+    // ENVIAR FORMULARIO
 
     formulario.addEventListener(
         "submit",
-        function (event) {
-
-            event.preventDefault();
-
-            guardarCita(event);
-
-        }
+        guardarCita
     );
-
-
-    // ======================================
-    // BOTÓN DIRECTO
-    // ======================================
-
-    if (boton) {
-
-        boton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                guardarCita(event);
-
-            }
-        );
-
-    }
-
 });
 
 
 // ==========================================
-// CARGAR PROPIEDADES
+// CARGAR PROPIEDADES EN FORMULARIO DE CITAS
 // ==========================================
 
 async function cargarPropiedadesParaCitas() {
 
     const select =
-        document.getElementById(
-            "appointmentProperty"
-        );
+        document.getElementById("appointmentProperty");
 
-    if (!select) {
-        return;
-    }
+    if (!select) return;
 
     try {
 
-        const respuesta =
-            await fetch(API_URL);
+        const respuesta = await fetch(API_URL);
 
         if (!respuesta.ok) {
-
             throw new Error(
-                "Error al cargar propiedades"
+                "Error al cargar propiedades."
             );
-
         }
 
-        const propiedades =
-            await respuesta.json();
-
-        console.log(
-            "Propiedades para citas:",
-            propiedades
-        );
+        const propiedades = await respuesta.json();
 
         select.innerHTML = "";
 
-        const inicial =
-            document.createElement("option");
+        const inicial = document.createElement("option");
 
         inicial.value = "";
-
         inicial.textContent =
             "Selecciona una propiedad";
 
         select.appendChild(inicial);
 
+        propiedades.forEach(function (propiedad) {
 
-        propiedades.forEach(
-            function (propiedad) {
+            const opcion = document.createElement("option");
 
-                const opcion =
-                    document.createElement(
-                        "option"
-                    );
+            opcion.value = propiedad.id;
 
-                opcion.value =
-                    propiedad.id;
+            opcion.textContent =
+                `${propiedad.titulo || "Propiedad"} — ${propiedad.ciudad || ""}`;
 
-                opcion.textContent =
-                    `${propiedad.titulo} — ${propiedad.ciudad}`;
-
-                select.appendChild(
-                    opcion
-                );
-
-            }
-        );
-
+            select.appendChild(opcion);
+        });
 
     } catch (error) {
 
         console.error(
-            "Error cargando propiedades:",
+            "Error cargando propiedades para citas:",
             error
         );
 
@@ -1186,205 +936,118 @@ async function cargarPropiedadesParaCitas() {
                 No se pudieron cargar las propiedades
             </option>
         `;
-
     }
-
 }
 
 
 // ==========================================
-// CARGAR HORARIOS
+// CARGAR HORARIOS DISPONIBLES
 // ==========================================
 
 async function cargarHorariosDisponibles(
-    fecha
+    fechaSeleccionada
 ) {
 
     const contenedor =
-        document.getElementById(
-            "appointmentTimes"
-        );
+        document.getElementById("appointmentTimes");
 
     const propiedad =
-        document.getElementById(
-            "appointmentProperty"
-        );
+        document.getElementById("appointmentProperty");
 
-
-    if (
-        !contenedor ||
-        !propiedad ||
-        !fecha
-    ) {
-
+    if (!contenedor || !propiedad || !fechaSeleccionada) {
         return;
-
     }
-
 
     if (!propiedad.value) {
 
-        contenedor.innerHTML = `
-            <div class="alert alert-warning">
-                Primero selecciona una propiedad.
-            </div>
-        `;
+        contenedor.textContent =
+            "Primero selecciona una propiedad.";
 
         return;
-
     }
 
-
-    contenedor.innerHTML = `
-        <div class="text-muted">
-            Consultando horarios disponibles...
-        </div>
-    `;
-
+    contenedor.textContent =
+        "Consultando horarios disponibles...";
 
     try {
 
-        const respuesta =
-            await fetch(
-                CITAS_API_URL
-            );
+        const respuesta = await fetch(CITAS_API_URL);
 
         if (!respuesta.ok) {
-
             throw new Error(
-                "No se pudieron consultar las citas"
+                "No se pudieron consultar las citas."
             );
-
         }
 
-        const citas =
-            await respuesta.json();
+        const citas = await respuesta.json();
 
+        const horariosOcupados = citas
+            .filter(function (cita) {
 
-        // ======================================
-        // HORARIOS OCUPADOS
-        // ======================================
-
-        const horariosOcupados =
-            citas
-                .filter(
-                    function (cita) {
-
-                        return (
-                            cita.fecha === fecha &&
-                            cita.estado !== "cancelada"
-                        );
-
-                    }
-                )
-                .map(
-                    function (cita) {
-
-                        return String(
-                            cita.hora
-                        ).substring(0, 5);
-
-                    }
+                return (
+                    cita.fecha === fechaSeleccionada &&
+                    String(cita.estado || "").toLowerCase() !==
+                        "cancelada"
                 );
+            })
+            .map(function (cita) {
 
-
-        // ======================================
-        // HORARIOS DISPONIBLES
-        // ======================================
+                return String(cita.hora || "").substring(0, 5);
+            });
 
         const horariosDisponibles =
-            HORARIOS_CITA.filter(
-                function (hora) {
+            HORARIOS_CITA.filter(function (hora) {
 
-                    return !horariosOcupados.includes(
-                        hora
-                    );
-
-                }
-            );
-
+                return !horariosOcupados.includes(hora);
+            });
 
         contenedor.innerHTML = "";
 
+        if (horariosDisponibles.length === 0) {
 
-        if (
-            horariosDisponibles.length === 0
-        ) {
-
-            contenedor.innerHTML = `
-                <div class="alert alert-warning">
-                    No hay horarios disponibles
-                    para esta fecha.
-                </div>
-            `;
+            contenedor.textContent =
+                "No hay horarios disponibles para esta fecha.";
 
             return;
-
         }
 
+        const titulo = document.createElement("p");
 
-        const titulo =
-            document.createElement("p");
-
-        titulo.className =
-            "fw-semibold mb-3";
-
-        titulo.textContent =
-            "Selecciona un horario:";
+        titulo.className = "fw-semibold mb-3";
+        titulo.textContent = "Selecciona un horario:";
 
         contenedor.appendChild(titulo);
 
+        const fila = document.createElement("div");
 
-        const fila =
-            document.createElement("div");
+        fila.className = "d-flex flex-wrap gap-2";
 
-        fila.className =
-            "d-flex flex-wrap gap-2";
+        horariosDisponibles.forEach(function (hora) {
 
+            const botonHora =
+                document.createElement("button");
 
-        horariosDisponibles.forEach(
-            function (hora) {
+            botonHora.type = "button";
 
-                const boton =
-                    document.createElement(
-                        "button"
+            botonHora.className =
+                "btn btn-outline-primary";
+
+            botonHora.textContent = hora;
+
+            botonHora.addEventListener(
+                "click",
+                function () {
+                    seleccionarHorario(
+                        hora,
+                        botonHora
                     );
+                }
+            );
 
-                boton.type =
-                    "button";
+            fila.appendChild(botonHora);
+        });
 
-                boton.className =
-                    "btn btn-outline-primary";
-
-                boton.textContent =
-                    hora;
-
-
-                boton.addEventListener(
-                    "click",
-                    function () {
-
-                        seleccionarHorario(
-                            hora,
-                            boton
-                        );
-
-                    }
-                );
-
-
-                fila.appendChild(
-                    boton
-                );
-
-            }
-        );
-
-
-        contenedor.appendChild(
-            fila
-        );
-
+        contenedor.appendChild(fila);
 
     } catch (error) {
 
@@ -1393,15 +1056,9 @@ async function cargarHorariosDisponibles(
             error
         );
 
-        contenedor.innerHTML = `
-            <div class="alert alert-danger">
-                No se pudieron consultar
-                los horarios.
-            </div>
-        `;
-
+        contenedor.textContent =
+            "No se pudieron consultar los horarios. Intenta nuevamente.";
     }
-
 }
 
 
@@ -1409,129 +1066,73 @@ async function cargarHorariosDisponibles(
 // SELECCIONAR HORARIO
 // ==========================================
 
-function seleccionarHorario(
-    hora,
-    boton
-) {
+function seleccionarHorario(hora, boton) {
 
     const input =
-        document.getElementById(
-            "appointmentTime"
-        );
+        document.getElementById("appointmentTime");
 
     if (!input) {
 
         console.error(
-            "No existe appointmentTime"
+            "No existe el campo appointmentTime."
         );
 
         return;
-
     }
 
-
-    input.value =
-        hora;
-
-
-    // Quitar selección anterior
+    input.value = hora;
 
     const contenedor =
-        document.getElementById(
-            "appointmentTimes"
-        );
+        document.getElementById("appointmentTimes");
 
     if (contenedor) {
 
-        const botones =
-            contenedor.querySelectorAll(
-                "button"
-            );
-
-        botones.forEach(
+        contenedor.querySelectorAll("button").forEach(
             function (elemento) {
 
-                elemento.classList.remove(
-                    "btn-primary"
-                );
+                elemento.classList.remove("btn-primary");
 
                 elemento.classList.add(
                     "btn-outline-primary"
                 );
-
             }
         );
-
     }
-
-
-    // Seleccionar horario
 
     boton.classList.remove(
         "btn-outline-primary"
     );
 
-    boton.classList.add(
-        "btn-primary"
-    );
-
-
-    // Mostrar datos del cliente
+    boton.classList.add("btn-primary");
 
     const datosCliente =
-        document.getElementById(
-            "clientDataSection"
-        );
+        document.getElementById("clientDataSection");
 
     if (datosCliente) {
-
-        datosCliente.classList.remove(
-            "d-none"
-        );
-
+        datosCliente.classList.remove("d-none");
     }
-
-
-    console.log(
-        "Horario seleccionado:",
-        hora
-    );
-
 }
 
 
 // ==========================================
-// OCULTAR DATOS CLIENTE
+// OCULTAR DATOS DEL CLIENTE
 // ==========================================
 
 function ocultarDatosCliente() {
 
     const datos =
-        document.getElementById(
-            "clientDataSection"
-        );
+        document.getElementById("clientDataSection");
 
     const hora =
-        document.getElementById(
-            "appointmentTime"
-        );
-
+        document.getElementById("appointmentTime");
 
     if (datos) {
-
-        datos.classList.add(
-            "d-none"
-        );
-
+        datos.classList.add("d-none");
     }
-
 
     if (hora) {
-
         hora.value = "";
-
     }
-
 }
 
 
@@ -1542,34 +1143,23 @@ function ocultarDatosCliente() {
 function limpiarHorarios() {
 
     const contenedor =
-        document.getElementById(
-            "appointmentTimes"
-        );
+        document.getElementById("appointmentTimes");
 
     const hora =
-        document.getElementById(
-            "appointmentTime"
-        );
-
+        document.getElementById("appointmentTime");
 
     if (contenedor) {
 
         contenedor.innerHTML = `
             <p class="text-muted">
-                Selecciona una fecha
-                para consultar los horarios.
+                Selecciona una fecha para consultar los horarios.
             </p>
         `;
-
     }
-
 
     if (hora) {
-
         hora.value = "";
-
     }
-
 }
 
 
@@ -1579,123 +1169,46 @@ function limpiarHorarios() {
 
 async function guardarCita(event) {
 
-    if (event) {
-        event.preventDefault();
-    }
-
-
-    console.log(
-        "INMOVA: intentando guardar cita..."
-    );
-
-
-    // ======================================
-    // OBTENER CAMPOS
-    // ======================================
+    event.preventDefault();
 
     const propiedad =
-        document.getElementById(
-            "appointmentProperty"
-        );
+        document.getElementById("appointmentProperty");
 
     const fecha =
-        document.getElementById(
-            "appointmentDate"
-        );
+        document.getElementById("appointmentDate");
 
     const hora =
-        document.getElementById(
-            "appointmentTime"
-        );
+        document.getElementById("appointmentTime");
 
     const nombre =
-        document.getElementById(
-            "appointmentName"
-        );
+        document.getElementById("appointmentName");
 
     const telefono =
-        document.getElementById(
-            "appointmentPhone"
-        );
+        document.getElementById("appointmentPhone");
 
     const privacidad =
-        document.getElementById(
-            "appointmentPrivacy"
-        );
+        document.getElementById("appointmentPrivacy");
 
     const boton =
-        document.getElementById(
-            "confirmAppointment"
-        );
+        document.getElementById("confirmAppointment");
 
+    // VALIDAR CAMPOS
 
-    // ======================================
-    // VALIDAR ELEMENTOS
-    // ======================================
-
-    if (!propiedad) {
+    if (
+        !propiedad ||
+        !fecha ||
+        !hora ||
+        !nombre ||
+        !telefono
+    ) {
 
         mostrarMensajeCita(
-            "No se encontró el campo de propiedad.",
+            "Faltan campos obligatorios en el formulario.",
             "danger"
         );
 
         return;
-
     }
-
-
-    if (!fecha) {
-
-        mostrarMensajeCita(
-            "No se encontró el campo de fecha.",
-            "danger"
-        );
-
-        return;
-
-    }
-
-
-    if (!hora) {
-
-        mostrarMensajeCita(
-            "No se encontró el campo de horario.",
-            "danger"
-        );
-
-        return;
-
-    }
-
-
-    if (!nombre) {
-
-        mostrarMensajeCita(
-            "No se encontró el campo de nombre.",
-            "danger"
-        );
-
-        return;
-
-    }
-
-
-    if (!telefono) {
-
-        mostrarMensajeCita(
-            "No se encontró el campo de teléfono.",
-            "danger"
-        );
-
-        return;
-
-    }
-
-
-    // ======================================
-    // VALIDACIONES
-    // ======================================
 
     if (!propiedad.value) {
 
@@ -1705,9 +1218,7 @@ async function guardarCita(event) {
         );
 
         return;
-
     }
-
 
     if (!fecha.value) {
 
@@ -1717,9 +1228,7 @@ async function guardarCita(event) {
         );
 
         return;
-
     }
-
 
     if (!hora.value) {
 
@@ -1729,38 +1238,22 @@ async function guardarCita(event) {
         );
 
         return;
-
     }
-
-
-    if (!nombre.value.trim()) {
-
-        mostrarMensajeCita(
-            "Escribe tu nombre completo.",
-            "warning"
-        );
-
-        return;
-
-    }
-
-
-    if (!telefono.value.trim()) {
-
-        mostrarMensajeCita(
-            "Escribe tu número de teléfono.",
-            "warning"
-        );
-
-        return;
-
-    }
-
 
     if (
-        privacidad &&
-        !privacidad.checked
+        !nombre.value.trim() ||
+        !telefono.value.trim()
     ) {
+
+        mostrarMensajeCita(
+            "Escribe tu nombre y número de teléfono.",
+            "warning"
+        );
+
+        return;
+    }
+
+    if (privacidad && !privacidad.checked) {
 
         mostrarMensajeCita(
             "Debes aceptar el aviso de privacidad.",
@@ -1768,222 +1261,122 @@ async function guardarCita(event) {
         );
 
         return;
-
     }
 
-
-    // ======================================
-    // DATOS
-    // ======================================
+    // DATOS QUE SE ENVÍAN A DJANGO
 
     const datosCita = {
 
-        propiedad:
-            Number(
-                propiedad.value
-            ),
+        propiedad: Number(propiedad.value),
 
-        nombre_cliente:
-            nombre.value.trim(),
+        nombre_cliente: nombre.value.trim(),
 
-        telefono:
-            telefono.value.trim(),
+        telefono: telefono.value.trim(),
 
-        fecha:
-            fecha.value,
+        fecha: fecha.value,
 
-        hora:
-            hora.value,
+        hora: hora.value,
 
-        estado:
-            "pendiente"
-
+        estado: "pendiente"
     };
-
-
-    console.log(
-        "INMOVA: datos enviados:",
-        datosCita
-    );
-
-
-    // ======================================
-    // BOTÓN
-    // ======================================
 
     if (boton) {
 
-        boton.disabled =
-            true;
+        boton.disabled = true;
 
-        boton.textContent =
-            "Guardando...";
-
+        boton.textContent = "Guardando...";
     }
-
 
     try {
 
-        const respuesta =
-            await fetch(
-                CITAS_API_URL,
-                {
-                    method: "POST",
+        const respuesta = await fetch(
+            CITAS_API_URL,
+            {
+                method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
 
-                        "Accept":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify(
-                            datosCita
-                        )
-                }
-            );
-
-
-        // ==================================
-        // LEER RESPUESTA
-        // ==================================
-
-        const texto =
-            await respuesta.text();
-
-        console.log(
-            "Respuesta Django:",
-            texto
+                body: JSON.stringify(datosCita)
+            }
         );
 
+        const texto = await respuesta.text();
 
         let resultado = {};
 
         try {
 
-            resultado =
-                JSON.parse(texto);
+            resultado = JSON.parse(texto);
 
         } catch (error) {
 
             console.error(
-                "Django no devolvió JSON:",
+                "Respuesta no JSON de Django:",
                 texto
             );
-
         }
-
-
-        // ==================================
-        // ERROR
-        // ==================================
 
         if (!respuesta.ok) {
 
-            let mensaje =
-                "Django rechazó la cita.";
+            console.error(
+                "Error guardando cita:",
+                resultado
+            );
 
-            if (resultado.hora) {
+            const detalle =
+                resultado.detail ||
+                resultado.hora ||
+                resultado.fecha ||
+                resultado.non_field_errors;
 
-                mensaje =
-                    Array.isArray(
-                        resultado.hora
-                    )
-                        ? resultado.hora[0]
-                        : resultado.hora;
-
-            } else if (
-                resultado.detail
-            ) {
-
-                mensaje =
-                    resultado.detail;
-
-            } else if (
-                resultado.non_field_errors
-            ) {
-
-                mensaje =
-                    Array.isArray(
-                        resultado.non_field_errors
-                    )
-                        ? resultado.non_field_errors[0]
-                        : resultado.non_field_errors;
-
-            }
-
+            const mensaje = Array.isArray(detalle)
+                ? detalle.join(" ")
+                : detalle ||
+                  "No se pudo guardar la cita.";
 
             mostrarMensajeCita(
                 mensaje,
                 "danger"
             );
 
-            console.error(
-                "Error Django:",
-                resultado
-            );
-
             return;
-
         }
-
-
-        // ==================================
-        // ÉXITO
-        // ==================================
-
-        console.log(
-            "CITA GUARDADA:",
-            resultado
-        );
-
 
         mostrarMensajeCita(
             "¡Cita agendada correctamente! Nos pondremos en contacto contigo para confirmar tu visita.",
             "success"
         );
 
+        // LIMPIAR FORMULARIO
 
-        // ==================================
-        // LIMPIAR
-        // ==================================
+        nombre.value = "";
 
-        nombre.value =
-            "";
+        telefono.value = "";
 
-        telefono.value =
-            "";
+        propiedad.value = "";
 
-        propiedad.value =
-            "";
-
-        fecha.value =
-            "";
+        fecha.value = "";
 
         if (privacidad) {
-
-            privacidad.checked =
-                false;
-
+            privacidad.checked = false;
         }
-
 
         limpiarHorarios();
 
         ocultarDatosCliente();
 
-
     } catch (error) {
 
         console.error(
-            "ERROR AL GUARDAR CITA:",
+            "Error al guardar cita:",
             error
         );
 
         mostrarMensajeCita(
-            "No se pudo conectar con Django. Revisa que el servidor esté funcionando.",
+            "No se pudo conectar con Django. Comprueba que el servidor esté funcionando.",
             "danger"
         );
 
@@ -1991,59 +1384,44 @@ async function guardarCita(event) {
 
         if (boton) {
 
-            boton.disabled =
-                false;
+            boton.disabled = false;
 
-            boton.textContent =
-                "Confirmar visita";
-
+            boton.textContent = "Confirmar visita";
         }
-
     }
-
 }
 
 
 // ==========================================
-// MENSAJE
+// MOSTRAR MENSAJES DE CITAS
 // ==========================================
 
-function mostrarMensajeCita(
-    mensaje,
-    tipo
-) {
+function mostrarMensajeCita(mensaje, tipo) {
 
     const contenedor =
-        document.getElementById(
-            "appointmentMessage"
-        );
-
+        document.getElementById("appointmentMessage");
 
     if (!contenedor) {
 
         alert(mensaje);
 
         return;
-
     }
 
+    contenedor.innerHTML = "";
 
-    contenedor.innerHTML = `
+    const alerta = document.createElement("div");
 
-        <div
-            class="alert alert-${tipo}"
-            role="alert"
-        >
-            ${mensaje}
-        </div>
+    alerta.className = `alert alert-${tipo}`;
 
-    `;
+    alerta.setAttribute("role", "alert");
 
+    alerta.textContent = mensaje;
+
+    contenedor.appendChild(alerta);
 
     contenedor.scrollIntoView({
         behavior: "smooth",
         block: "center"
     });
-
 }
-

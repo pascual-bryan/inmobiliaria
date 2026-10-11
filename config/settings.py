@@ -120,7 +120,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+
+
+STATIC_URL = '/static/'
+
+# Carpeta donde están los archivos HTML, main.js e Imagenes
+FRONTEND_DIR = BASE_DIR
+
+# Permite servir archivos estáticos desde la carpeta del frontend
+STATICFILES_DIRS = [
+    FRONTEND_DIR,
+]
+
+
+
 
 
 # Email

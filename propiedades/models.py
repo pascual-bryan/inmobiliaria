@@ -1,23 +1,15 @@
+
 from django.db import models
 
 
 class Propiedad(models.Model):
 
     titulo = models.CharField(max_length=150)
-
     descripcion = models.TextField()
-
     tipo = models.CharField(max_length=50)
-
     operacion = models.CharField(max_length=30)
-
-    precio = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
-    )
-
+    precio = models.DecimalField(max_digits=12, decimal_places=2)
     ubicacion = models.CharField(max_length=200)
-
     ciudad = models.CharField(max_length=100)
 
     estado = models.CharField(
@@ -25,17 +17,9 @@ class Propiedad(models.Model):
         default="Puebla"
     )
 
-    recamaras = models.PositiveIntegerField(
-        default=0
-    )
-
-    banos = models.PositiveIntegerField(
-        default=0
-    )
-
-    estacionamientos = models.PositiveIntegerField(
-        default=0
-    )
+    recamaras = models.PositiveIntegerField(default=0)
+    banos = models.PositiveIntegerField(default=0)
+    estacionamientos = models.PositiveIntegerField(default=0)
 
     metros_terreno = models.DecimalField(
         max_digits=10,
@@ -50,19 +34,13 @@ class Propiedad(models.Model):
     )
 
     imagen_principal = models.ImageField(
-        upload_to='propiedades/',
+        upload_to="propiedades/",
         blank=True,
         null=True
     )
 
-    activa = models.BooleanField(
-        default=True
-    )
-
-    fecha_registro = models.DateTimeField(
-        auto_now_add=True
-    )
-
+    activa = models.BooleanField(default=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
 
     frente = models.DecimalField(
         max_digits=10,
@@ -84,8 +62,18 @@ class Propiedad(models.Model):
         default=""
     )
 
+    # Enlace individual de Google Maps
+    ubicacion_maps = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="Enlace de Google Maps"
+    )
 
-# clase Lote
+    def __str__(self):
+        return self.titulo
+
+
 class Lote(models.Model):
 
     ESTADOS = [
@@ -101,11 +89,7 @@ class Lote(models.Model):
     )
 
     numero = models.PositiveIntegerField()
-
-    superficie = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
+    superficie = models.DecimalField(max_digits=10, decimal_places=2)
 
     frente = models.DecimalField(
         max_digits=10,
@@ -140,9 +124,14 @@ class Lote(models.Model):
         default="disponible"
     )
 
-def __str__(self):
-    return f"Lote {self.numero} - {self.propiedad.titulo}"
-
-
-
     
+    informacion_precios = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Precios y formas de pago",
+        help_text="Indica precio total, enganche, mensualidad y precio de contado de este lote."
+    )
+
+
+    def __str__(self):
+        return f"Lote {self.numero} - {self.propiedad.titulo}"
