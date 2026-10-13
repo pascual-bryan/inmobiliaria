@@ -60,7 +60,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,6 +123,9 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
+# se anade esto 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Carpeta donde están los archivos HTML, main.js e Imagenes
 FRONTEND_DIR = BASE_DIR
@@ -146,9 +149,15 @@ MAILERS = {
 }
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAdminUser",
     ],
 }
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard.html'
+LOGOUT_REDIRECT_URL = '/login/'
 

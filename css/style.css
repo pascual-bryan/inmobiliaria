@@ -2362,3 +2362,132 @@ img {
     }
 }
 
+
+/* ==========================================
+   GALERÍA PROFESIONAL DE PROPIEDADES INMOVA
+========================================== */
+
+/* Imagen principal */
+.property-main-image {
+    width: 100%;
+    height: 430px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #f1f3f5;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.10);
+}
+
+.property-main-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: opacity 0.25s ease;
+}
+
+/* Sección de galería */
+.property-gallery {
+    margin-top: 22px !important;
+}
+
+.property-gallery .property-subtitle {
+    margin-bottom: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #222b45;
+}
+
+/* Cuadrícula adaptable */
+.property-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+/* Cada fotografía */
+.property-gallery-item {
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e7eaf0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.property-gallery-item img {
+    display: block;
+    width: 100%;
+    height: 125px;
+    object-fit: cover;
+    object-position: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.property-gallery-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.13);
+}
+
+.property-gallery-item:hover img {
+    transform: scale(1.045);
+}
+
+/* Descripción opcional de cada fotografía */
+.property-gallery-item p {
+    margin: 0;
+    padding: 8px;
+    font-size: 0.82rem;
+}
+
+/* Videos */
+.property-videos-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.property-video-item {
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.property-video-item iframe,
+.property-video-item video {
+    width: 100%;
+    border-radius: 12px;
+}
+
+/* Tabletas */
+@media (max-width: 991px) {
+    .property-main-image {
+        height: 360px;
+    }
+
+    .property-gallery-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Celulares */
+@media (max-width: 576px) {
+    .property-main-image {
+        height: 270px;
+        border-radius: 12px;
+    }
+
+    .property-gallery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .property-gallery-item img {
+        height: 115px;
+    }
+}
+

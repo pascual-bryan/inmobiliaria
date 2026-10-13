@@ -35,15 +35,15 @@ const IMAGEN_DEFAULT = IMAGENES_URL + "house%202.jpg";
 // CONSTRUIR URL DE IMAGEN
 // ==========================================
 
-window.obtenerUrlImagen = function (imagen) {
 
+window.obtenerUrlImagen = function (imagen) {
     if (!imagen || !String(imagen).trim()) {
         return IMAGEN_DEFAULT;
     }
 
     let ruta = String(imagen).trim();
 
-    // Si Django devuelve una URL completa.
+    // Las URLs completas de Django y de servidores externos.
     if (/^https?:\/\//i.test(ruta)) {
         try {
             const url = new URL(ruta);
@@ -53,52 +53,57 @@ window.obtenerUrlImagen = function (imagen) {
                  url.hostname === "localhost") &&
                 url.port === "8000";
 
-            // Conservar las imágenes de servidores externos.
+            // Las imágenes de MEDIA deben conservar su ruta.
+            if (
+                esServidorLocal &&
+                url.pathname.startsWith("/media/")
+            ) {
+                return url.href;
+            }
+
             if (!esServidorLocal) {
                 return ruta;
             }
 
             ruta = url.pathname;
-
         } catch (error) {
             console.error("URL de imagen inválida:", imagen);
             return IMAGEN_DEFAULT;
         }
     }
 
-    // Quitar parámetros y fragmentos.
     ruta = ruta
         .split("?")[0]
         .split("#")[0]
         .replace(/\\/g, "/");
 
-    // Quitar barras iniciales.
+    // Las imágenes subidas desde Django están en MEDIA.
+    if (ruta.startsWith("/media/")) {
+        return "http://127.0.0.1:8000" + ruta;
+    }
+
     ruta = ruta.replace(/^\/+/, "");
 
-    // Eliminar prefijos conocidos.
+    if (ruta.startsWith("media/")) {
+        return "http://127.0.0.1:8000/" + ruta;
+    }
+
+    // Mantener compatibilidad con las imágenes estáticas.
     ruta = ruta.replace(/^static\//i, "");
-    ruta = ruta.replace(/^media\/propiedades\//i, "");
-
-    // Quitar la carpeta Imagenes si ya viene incluida.
     ruta = ruta.replace(/^Imagenes\//i, "");
-
-    // Quitar la carpeta propiedades si viene dentro de Imagenes.
-    ruta = ruta.replace(/^propiedades\//i, "");
 
     if (!ruta) {
         return IMAGEN_DEFAULT;
     }
 
-    // Codificar espacios y caracteres especiales.
     const rutaCodificada = ruta
         .split("/")
-        .map(function (parte) {
-            return encodeURIComponent(parte);
-        })
+        .map(parte => encodeURIComponent(parte))
         .join("/");
 
     return IMAGENES_URL + rutaCodificada;
 };
+
 
 
 // ==========================================
@@ -407,15 +412,13 @@ async function cargarLotes(propiedadId) {
                 })
                 : "Consultar";
 
+            
             const fila = document.createElement("tr");
 
-            fila.innerHTML = `
+            fila.innerHTML = `          
                 <td>Lote ${lote.numero ?? "-"}</td>
-                <td>${lote.superficie || "-"} m²</td>
-                <td>${lote.frente || "-"} m</td>
-                <td>${lote.fondo || "-"} m</td>
+                <td>${lote.superficie ?? "-"} m²</td>
                 <td>${lote.medidas || "-"}</td>
-                <td>${precio}</td>
                 <td class="lote-precios"></td>
                 <td>
                     <span class="badge ${estadoClase}">
@@ -424,14 +427,27 @@ async function cargarLotes(propiedadId) {
                 </td>
             `;
 
-            // Mostrar precio total, enganche, mensualidades y contado.
-            // textContent conserva el texto de forma segura.
             const celdaPrecios = fila.querySelector(".lote-precios");
+            const informacion = String(lote.informacion_precios || "").trim();
 
-            celdaPrecios.textContent =
-                lote.informacion_precios || "Consultar";
+            if (informacion) {
+    // Cada concepto se muestra en una línea dentro de su celda.
+    const lineas = informacion
+        .split(/\s*(?=Enganche:|Mensualidades? de|Precio Total:|Precio Total=|Precio de Contado:|Precio de contado=)/i)
+        .filter(Boolean);
+
+    lineas.forEach(texto => {
+        const linea = document.createElement("div");
+        linea.className = "lote-precio-linea";
+        linea.textContent = texto.trim();
+        celdaPrecios.appendChild(linea);
+    });
+            } else {
+                celdaPrecios.textContent = "Consultar";
+            }
 
             tabla.appendChild(fila);
+
         });
 
     } catch (error) {
@@ -467,6 +483,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     cargarDetallePropiedad(id);
+    
 });
 
 
@@ -494,6 +511,8 @@ async function cargarDetallePropiedad(id) {
             "Propiedad cargada:",
             propiedad
         );
+        cargarGaleriaPropiedad(propiedad);
+        cargarVideosPropiedad(propiedad);
 
         const imagen = window.obtenerUrlImagen(
             propiedad.imagen_principal
@@ -755,6 +774,333 @@ async function cargarDetallePropiedad(id) {
         );
     }
 }
+
+
+
+/* ==========================================
+   GALERÍA DE FOTOS DE LA PROPIEDAD
+========================================== */
+
+function obtenerUrlMedia(archivo) {
+    if (!archivo) return "";
+
+    const ruta = String(archivo).trim();
+
+    // Si Django ya devuelve una URL completa, conservarla.
+    if (/^https?:\/\//i.test(ruta)) {
+        return ruta;
+    }
+
+    // Rutas de archivos multimedia de Django.
+    if (ruta.startsWith("/media/")) {
+        return "http://127.0.0.1:8000" + ruta;
+    }
+
+    return "http://127.0.0.1:8000/media/" +
+        ruta.replace(/^\/+/, "").replace(/^media\//, "");
+}
+
+
+function cargarGaleriaPropiedad(propiedad) {
+    const seccion = document.getElementById("propertyGallerySection");
+    const galeria = document.getElementById("propertyGallery");
+
+    if (!seccion || !galeria) {
+        console.error("No se encontró el contenedor de la galería.");
+        return;
+    }
+
+    galeria.replaceChildren();
+
+    const fotos = Array.isArray(propiedad.galeria_fotos)
+        ? propiedad.galeria_fotos
+        : [];
+
+    console.log("Fotos recibidas para la galería:", fotos);
+
+    const fotosValidas = fotos.filter(
+        foto => foto && foto.imagen
+    );
+
+    if (fotosValidas.length === 0) {
+        seccion.style.display = "none";
+        console.warn(
+            "Esta propiedad no recibió fotos en galeria_fotos."
+        );
+        return;
+    }
+
+    seccion.style.display = "block";
+
+    fotosValidas.forEach(foto => {
+        const url = obtenerUrlMedia(foto.imagen);
+
+        const contenedor = document.createElement("div");
+        contenedor.className = "property-gallery-item";
+
+        const miniatura = document.createElement("img");
+        miniatura.alt = foto.descripcion || "Foto de la propiedad";
+        miniatura.loading = "lazy";
+        miniatura.style.width = "100%";
+        miniatura.style.height = "120px";
+        miniatura.style.objectFit = "cover";
+        miniatura.style.cursor = "pointer";
+
+        miniatura.onload = function () {
+            console.log("Foto de galería cargada:", url);
+        };
+
+        miniatura.onerror = function () {
+            console.error("No se pudo cargar la foto de galería:", url);
+            contenedor.remove();
+
+            if (!galeria.querySelector("img")) {
+                seccion.style.display = "none";
+            }
+        };
+
+        miniatura.addEventListener("click", function () {
+            const principal = document.getElementById("propertyMainImage");
+
+            if (principal) {
+                configurarImagen(principal, url);
+                principal.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        });
+
+        contenedor.appendChild(miniatura);
+
+        if (foto.descripcion) {
+            const descripcion = document.createElement("p");
+            descripcion.className = "small text-muted mt-1";
+            descripcion.textContent = foto.descripcion;
+            contenedor.appendChild(descripcion);
+        }
+
+        galeria.appendChild(contenedor);
+
+        // Asignar la ruta después de registrar el evento de error.
+        miniatura.src = url;
+    });
+}
+
+
+
+function obtenerUrlMedia(archivo) {
+    if (!archivo) return "";
+
+    const ruta = String(archivo).trim();
+
+    if (/^https?:\/\//i.test(ruta)) {
+        return ruta;
+    }
+
+    if (ruta.startsWith("/media/")) {
+        return "http://127.0.0.1:8000" + ruta;
+    }
+
+    return "http://127.0.0.1:8000/media/" +
+        ruta.replace(/^\/+/, "").replace(/^media\//, "");
+}
+
+
+function cargarGaleriaPropiedad(propiedad) {
+    const seccion = document.getElementById("propertyGallerySection");
+    const galeria = document.getElementById("propertyGallery");
+
+    if (!seccion || !galeria) return;
+
+    galeria.replaceChildren();
+
+    const fotos = Array.isArray(propiedad.galeria_fotos)
+        ? propiedad.galeria_fotos
+        : [];
+
+    const fotosValidas = fotos.filter(foto => foto.imagen);
+
+    if (fotosValidas.length === 0) {
+        seccion.style.display = "none";
+        return;
+    }
+
+    seccion.style.display = "block";
+
+    fotosValidas.forEach(foto => {
+        const url = obtenerUrlMedia(foto.imagen);
+
+        const contenedor = document.createElement("div");
+        contenedor.className = "property-gallery-item";
+
+        const miniatura = document.createElement("img");
+        miniatura.src = url;
+        miniatura.alt = foto.descripcion || "Foto de la propiedad";
+        miniatura.loading = "lazy";
+        miniatura.style.width = "100%";
+        miniatura.style.height = "120px";
+        miniatura.style.objectFit = "cover";
+        miniatura.style.cursor = "pointer";
+
+        miniatura.addEventListener("click", function () {
+            const principal = document.getElementById("propertyMainImage");
+
+            if (principal) {
+                configurarImagen(principal, url);
+                principal.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+        });
+
+        miniatura.onerror = function () {
+            contenedor.remove();
+
+            if (!galeria.querySelector("img")) {
+                seccion.style.display = "none";
+            }
+        };
+
+        contenedor.appendChild(miniatura);
+
+        if (foto.descripcion) {
+            const descripcion = document.createElement("p");
+            descripcion.className = "small text-muted mt-1";
+            descripcion.textContent = foto.descripcion;
+            contenedor.appendChild(descripcion);
+        }
+
+        galeria.appendChild(contenedor);
+    });
+}
+
+
+/* ==========================================
+   VIDEOS DE LA PROPIEDAD
+========================================== */
+
+function convertirUrlYouTube(url) {
+    try {
+        const enlace = new URL(url);
+
+        let videoId = "";
+
+        if (
+            enlace.hostname === "youtu.be" ||
+            enlace.hostname === "www.youtu.be"
+        ) {
+            videoId = enlace.pathname.split("/").filter(Boolean)[0] || "";
+        } else if (
+            enlace.hostname.includes("youtube.com") ||
+            enlace.hostname.includes("youtube-nocookie.com")
+        ) {
+            if (enlace.pathname === "/watch") {
+                videoId = enlace.searchParams.get("v") || "";
+            } else if (
+                enlace.pathname.startsWith("/embed/") ||
+                enlace.pathname.startsWith("/shorts/")
+            ) {
+                videoId = enlace.pathname.split("/")[2] || "";
+            }
+        }
+
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+            return "";
+        }
+
+        return "https://www.youtube-nocookie.com/embed/" + videoId;
+    } catch (error) {
+        return "";
+    }
+}
+
+
+function cargarVideosPropiedad(propiedad) {
+    const seccion = document.getElementById("propertyVideoSection");
+    const contenedor = document.getElementById("propertyVideos");
+
+    if (!seccion || !contenedor) return;
+
+    contenedor.replaceChildren();
+
+    const videos = Array.isArray(propiedad.videos)
+        ? propiedad.videos
+        : [];
+
+    const videosValidos = videos.filter(video => {
+        if (video.tipo === "youtube") {
+            return Boolean(video.url);
+        }
+
+        return Boolean(video.archivo);
+    });
+
+    if (videosValidos.length === 0) {
+        seccion.style.display = "none";
+        return;
+    }
+
+    seccion.style.display = "block";
+
+    videosValidos.forEach(video => {
+        const tarjeta = document.createElement("div");
+        tarjeta.className = "property-video-item mb-4";
+
+        if (video.titulo) {
+            const titulo = document.createElement("h5");
+            titulo.textContent = video.titulo;
+            tarjeta.appendChild(titulo);
+        }
+
+        const marco = document.createElement("div");
+        marco.className = "ratio ratio-16x9";
+
+        if (video.tipo === "youtube") {
+            const urlEmbed = convertirUrlYouTube(video.url);
+
+            if (!urlEmbed) return;
+
+            const iframe = document.createElement("iframe");
+            iframe.src = urlEmbed;
+            iframe.title = video.titulo || "Video de la propiedad";
+            iframe.loading = "lazy";
+            iframe.allow =
+                "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+            iframe.allowFullscreen = true;
+            iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+            marco.appendChild(iframe);
+        } else {
+            const reproductor = document.createElement("video");
+            reproductor.controls = true;
+            reproductor.preload = "metadata";
+            reproductor.playsInline = true;
+
+            const fuente = document.createElement("source");
+            fuente.src = obtenerUrlMedia(video.archivo);
+            fuente.type = "video/mp4";
+
+            reproductor.appendChild(fuente);
+            reproductor.appendChild(
+                document.createTextNode(
+                    "Tu navegador no puede reproducir este video."
+                )
+            );
+
+            marco.appendChild(reproductor);
+        }
+
+        tarjeta.appendChild(marco);
+        contenedor.appendChild(tarjeta);
+    });
+
+    if (!contenedor.children.length) {
+        seccion.style.display = "none";
+    }
+}
+
 
 
 // ==========================================
@@ -1163,6 +1509,13 @@ function limpiarHorarios() {
 }
 
 
+
+
+// ==========================================
+// GUARDAR CITA
+// ==========================================
+
+
 // ==========================================
 // GUARDAR CITA
 // ==========================================
@@ -1171,160 +1524,147 @@ async function guardarCita(event) {
 
     event.preventDefault();
 
-    const propiedad =
-        document.getElementById("appointmentProperty");
+    const propiedad = document.getElementById("appointmentProperty");
+    const fecha = document.getElementById("appointmentDate");
+    const hora = document.getElementById("appointmentTime");
+    const nombre = document.getElementById("appointmentName");
+    const telefono = document.getElementById("appointmentPhone");
+    const privacidad = document.getElementById("appointmentPrivacy");
+    const boton = document.getElementById("confirmAppointment");
 
-    const fecha =
-        document.getElementById("appointmentDate");
+    // ==========================================
+    // VALIDAR CAMPOS OBLIGATORIOS
+    // ==========================================
 
-    const hora =
-        document.getElementById("appointmentTime");
-
-    const nombre =
-        document.getElementById("appointmentName");
-
-    const telefono =
-        document.getElementById("appointmentPhone");
-
-    const privacidad =
-        document.getElementById("appointmentPrivacy");
-
-    const boton =
-        document.getElementById("confirmAppointment");
-
-    // VALIDAR CAMPOS
-
-    if (
-        !propiedad ||
-        !fecha ||
-        !hora ||
-        !nombre ||
-        !telefono
-    ) {
-
+    if (!propiedad || !fecha || !hora || !nombre || !telefono) {
         mostrarMensajeCita(
             "Faltan campos obligatorios en el formulario.",
             "danger"
         );
-
         return;
     }
 
     if (!propiedad.value) {
-
-        mostrarMensajeCita(
-            "Selecciona una propiedad.",
-            "warning"
-        );
-
+        mostrarMensajeCita("Selecciona una propiedad.", "warning");
         return;
     }
 
     if (!fecha.value) {
-
-        mostrarMensajeCita(
-            "Selecciona una fecha.",
-            "warning"
-        );
-
+        mostrarMensajeCita("Selecciona una fecha.", "warning");
         return;
     }
 
     if (!hora.value) {
-
-        mostrarMensajeCita(
-            "Selecciona un horario.",
-            "warning"
-        );
-
+        mostrarMensajeCita("Selecciona un horario.", "warning");
         return;
     }
 
-    if (
-        !nombre.value.trim() ||
-        !telefono.value.trim()
-    ) {
-
+    if (!nombre.value.trim() || !telefono.value.trim()) {
         mostrarMensajeCita(
             "Escribe tu nombre y número de teléfono.",
             "warning"
         );
-
         return;
     }
 
     if (privacidad && !privacidad.checked) {
-
         mostrarMensajeCita(
             "Debes aceptar el aviso de privacidad.",
             "warning"
         );
-
         return;
     }
 
-    // DATOS QUE SE ENVÍAN A DJANGO
+    // ==========================================
+    // PREPARAR DATOS PARA DJANGO
+    // ==========================================
 
     const datosCita = {
-
         propiedad: Number(propiedad.value),
-
         nombre_cliente: nombre.value.trim(),
-
         telefono: telefono.value.trim(),
-
         fecha: fecha.value,
-
         hora: hora.value,
-
         estado: "pendiente"
     };
 
     if (boton) {
-
         boton.disabled = true;
-
         boton.textContent = "Guardando...";
     }
 
     try {
 
+        // ==========================================
+        // OBTENER TOKEN CSRF DE DJANGO
+        // ==========================================
+
+        const respuestaCSRF = await fetch(
+            "http://127.0.0.1:8000/api/csrf/",
+            {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json"
+                }
+            }
+        );
+
+        if (!respuestaCSRF.ok) {
+            throw new Error(
+                "No se pudo obtener el token de seguridad de Django."
+            );
+        }
+
+        const datosCSRF = await respuestaCSRF.json();
+        const csrfToken = datosCSRF.csrfToken;
+
+        if (!csrfToken) {
+            throw new Error(
+                "Django no devolvió el token CSRF."
+            );
+        }
+
+        // ==========================================
+        // ENVIAR CITA A DJANGO
+        // ==========================================
+
         const respuesta = await fetch(
             CITAS_API_URL,
             {
                 method: "POST",
-
+                credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
+                    "Accept": "application/json",
+                    "X-CSRFToken": csrfToken
                 },
-
                 body: JSON.stringify(datosCita)
             }
         );
 
         const texto = await respuesta.text();
-
         let resultado = {};
 
         try {
-
             resultado = JSON.parse(texto);
-
         } catch (error) {
-
             console.error(
                 "Respuesta no JSON de Django:",
                 texto
             );
         }
 
+        // ==========================================
+        // MANEJAR ERRORES DE DJANGO
+        // ==========================================
+
         if (!respuesta.ok) {
 
-            console.error(
-                "Error guardando cita:",
-                resultado
-            );
+            console.error("Error guardando cita:", {
+                status: respuesta.status,
+                respuesta: resultado
+            });
 
             const detalle =
                 resultado.detail ||
@@ -1332,32 +1672,34 @@ async function guardarCita(event) {
                 resultado.fecha ||
                 resultado.non_field_errors;
 
-            const mensaje = Array.isArray(detalle)
-                ? detalle.join(" ")
-                : detalle ||
-                  "No se pudo guardar la cita.";
+            let mensaje;
 
-            mostrarMensajeCita(
-                mensaje,
-                "danger"
-            );
+            if (Array.isArray(detalle)) {
+                mensaje = detalle.join(" ");
+            } else if (typeof detalle === "string") {
+                mensaje = detalle;
+            } else {
+                mensaje =
+                    "No se pudo guardar la cita. Verifica los datos e inténtalo nuevamente.";
+            }
 
+            mostrarMensajeCita(mensaje, "danger");
             return;
         }
+
+        // ==========================================
+        // CITA GUARDADA CORRECTAMENTE
+        // ==========================================
 
         mostrarMensajeCita(
             "¡Cita agendada correctamente! Nos pondremos en contacto contigo para confirmar tu visita.",
             "success"
         );
 
-        // LIMPIAR FORMULARIO
-
+        // Limpiar formulario.
         nombre.value = "";
-
         telefono.value = "";
-
         propiedad.value = "";
-
         fecha.value = "";
 
         if (privacidad) {
@@ -1365,17 +1707,14 @@ async function guardarCita(event) {
         }
 
         limpiarHorarios();
-
         ocultarDatosCliente();
 
     } catch (error) {
 
-        console.error(
-            "Error al guardar cita:",
-            error
-        );
+        console.error("Error al guardar cita:", error);
 
         mostrarMensajeCita(
+            error.message ||
             "No se pudo conectar con Django. Comprueba que el servidor esté funcionando.",
             "danger"
         );
@@ -1383,13 +1722,17 @@ async function guardarCita(event) {
     } finally {
 
         if (boton) {
-
             boton.disabled = false;
-
             boton.textContent = "Confirmar visita";
         }
     }
 }
+
+
+
+
+
+
 
 
 // ==========================================

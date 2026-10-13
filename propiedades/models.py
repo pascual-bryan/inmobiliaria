@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Propiedad(models.Model):
-
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField()
     tipo = models.CharField(max_length=50)
@@ -62,7 +61,6 @@ class Propiedad(models.Model):
         default=""
     )
 
-    # Enlace individual de Google Maps
     ubicacion_maps = models.URLField(
         max_length=500,
         blank=True,
@@ -75,7 +73,6 @@ class Propiedad(models.Model):
 
 
 class Lote(models.Model):
-
     ESTADOS = [
         ("disponible", "Disponible"),
         ("apartado", "Apartado"),
@@ -89,7 +86,10 @@ class Lote(models.Model):
     )
 
     numero = models.PositiveIntegerField()
-    superficie = models.DecimalField(max_digits=10, decimal_places=2)
+    superficie = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
 
     frente = models.DecimalField(
         max_digits=10,
@@ -124,14 +124,83 @@ class Lote(models.Model):
         default="disponible"
     )
 
-    
     informacion_precios = models.TextField(
         blank=True,
         default="",
         verbose_name="Precios y formas de pago",
-        help_text="Indica precio total, enganche, mensualidad y precio de contado de este lote."
+        help_text=(
+            "Indica precio total, enganche, mensualidad "
+            "y precio de contado de este lote."
+        )
     )
-
 
     def __str__(self):
         return f"Lote {self.numero} - {self.propiedad.titulo}"
+
+
+class FotoPropiedad(models.Model):
+    propiedad = models.ForeignKey(
+        Propiedad,
+        on_delete=models.CASCADE,
+        related_name="galeria_fotos"
+    )
+
+    imagen = models.ImageField(
+        upload_to="propiedades/galeria/"
+    )
+
+    descripcion = models.CharField(
+        max_length=200,
+        blank=True
+    )
+
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["orden", "id"]
+        verbose_name = "Foto de propiedad"
+        verbose_name_plural = "Fotos de propiedades"
+
+    def __str__(self):
+        return f"Foto de {self.propiedad}"
+
+
+class VideoPropiedad(models.Model):
+    propiedad = models.ForeignKey(
+        Propiedad,
+        on_delete=models.CASCADE,
+        related_name="videos"
+    )
+
+    TIPOS_VIDEO = [
+        ("archivo", "Archivo MP4"),
+        ("youtube", "YouTube"),
+    ]
+
+    tipo = models.CharField(
+        max_length=10,
+        choices=TIPOS_VIDEO,
+        default="archivo"
+    )
+
+    titulo = models.CharField(
+        max_length=200,
+        default="Recorrido de la propiedad"
+    )
+
+    archivo = models.FileField(
+        upload_to="propiedades/videos/",
+        blank=True,
+        null=True
+    )
+
+    url = models.URLField(blank=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["orden", "id"]
+        verbose_name = "Video de propiedad"
+        verbose_name_plural = "Videos de propiedades"
+
+    def __str__(self):
+        return f"{self.titulo} - {self.propiedad}"

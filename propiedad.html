@@ -13,7 +13,8 @@
         rel="stylesheet"
     >
 
-    <link rel="stylesheet" href="css/style.css">
+    <!-- <link rel="stylesheet" href="css/style.css"> -->
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body>
@@ -29,7 +30,7 @@
             <!-- LOGO -->
             <a href="index.html">
                 <img 
-                    src="Imagenes/logo sin fondo.png"
+                    src="/static/Imagenes/logo sin fondo.png"
                     alt="INMOVA"
                     class="logo-inmova"
                 >
@@ -142,6 +143,35 @@
                         >
 
                     </div>
+                    
+                    <!-- GALERÍA DE FOTOS -->
+                    <div
+                        id="propertyGallerySection"
+                        class="property-gallery mt-3"
+                        style="display: none;"
+                    >
+                        <h3 class="property-subtitle">Galería de fotos</h3>
+
+                        <div
+                            id="propertyGallery"
+                            class="property-gallery-grid"
+                        ></div>
+                    </div>
+
+                    <!-- VIDEOS DE LA PROPIEDAD -->
+                    <div
+                        id="propertyVideoSection"
+                        class="property-video mt-5"
+                        style="display: none;"
+                    >
+                        <h3 class="property-subtitle">Videos de la propiedad</h3>
+
+                        <div
+                            id="propertyVideos"
+                            class="property-videos-grid"
+                        ></div>
+                    </div>
+
 
                     <!-- VIDEO -->
                     <!-- ===================================== -->
@@ -474,6 +504,7 @@
                                     <th>
                                         Medidas principales
                                     </th>
+
                                     <th>
                                         Precios y formas de pago
                                     </th>
@@ -481,8 +512,6 @@
                                     <th>
                                         Estado
                                     </th>
-
-
                                 </tr>
 
                             </thead>
@@ -602,8 +631,9 @@
     <!-- ========================================= -->
     <!-- JAVASCRIPT INMOVA -->
     <!-- ========================================= -->
-
-    <script src="js/main.js"></script>
+<!-- 
+    <script src="js/main.js"></script> -->
+    <script src="/static/js/main.js"></script>
 
 </body>
 
